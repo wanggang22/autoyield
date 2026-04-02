@@ -110,7 +110,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     <div class="logo">AutoYield <span>AI DeFi Agent</span></div>
     <div class="nav-right">
       <span class="btn btn-sm btn-outline" style="color:var(--green);border-color:var(--green)">X Layer Mainnet</span>
-      <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+      <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">连接钱包</button>
     </div>
   </div>
 </nav>
@@ -274,18 +274,32 @@ async function loadStrategies() {
   } catch (err) { console.log('Strategy load:', err.message); }
 }
 
+// Prefer OKX Wallet on X Layer, fallback to MetaMask
+function getProvider() {
+  if (window.okxwallet) return window.okxwallet;
+  if (window.ethereum) return window.ethereum;
+  return null;
+}
+
 async function connectWallet() {
-  if (!window.ethereum) { alert('Please install MetaMask'); return; }
+  const provider = getProvider();
+  if (!provider) { alert('请安装 OKX Wallet 或 MetaMask'); return; }
+
   try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const accounts = await provider.request({ method: 'eth_requestAccounts' });
     userAccount = accounts[0];
+    window._provider = provider; // Store for later use
+    const walletName = window.okxwallet ? 'OKX' : 'MetaMask';
     document.getElementById('connectBtn').textContent = userAccount.slice(0,6) + '...' + userAccount.slice(-4);
+    document.getElementById('connectBtn').title = walletName + ' · ' + userAccount;
+    showToast(walletName + ' Wallet 已连接', 'success');
+
     // Switch to X Layer
     try {
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID }] });
+      await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID }] });
     } catch (switchErr) {
       if (switchErr.code === 4902) {
-        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID, chainName: 'X Layer', nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 }, rpcUrls: ['https://rpc.xlayer.tech'], blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'] }] });
+        await provider.request({ method: 'wallet_addEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID, chainName: 'X Layer', nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 }, rpcUrls: ['https://rpc.xlayer.tech'], blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'] }] });
       }
     }
   } catch (err) { console.error('Wallet connect failed:', err); }
@@ -357,7 +371,7 @@ async function executeDeposit() {
   showToast('请在 MetaMask 确认转账...', 'success');
 
   try {
-    const txHash = await window.ethereum.request({
+    const txHash = await (window._provider || getProvider()).request({
       method: 'eth_sendTransaction',
       params: [{
         from: userAccount,
@@ -420,7 +434,7 @@ async function runStrategy(strategyId, customRule) {
         message: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce },
       });
       showToast('需要 x402 签名 ($0.05)...', 'success');
-      const signature = await window.ethereum.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
+      const signature = await (window._provider || getProvider()).request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
       const paymentPayload = { x402Version: 1, scheme: 'exact', network: 'eip155:196', payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } } };
 
       showToast('AI Agent 执行中...', 'success');
@@ -501,8 +515,9 @@ function showStrategyResult(strategyId, data) {
 
 // Init
 loadStrategies();
-if (window.ethereum) {
-  window.ethereum.on('accountsChanged', (accounts) => {
+const _initProvider = getProvider();
+if (_initProvider) {
+  _initProvider.on('accountsChanged', (accounts) => {
     userAccount = accounts[0] || null;
     document.getElementById('connectBtn').textContent = userAccount ? userAccount.slice(0,6)+'...'+userAccount.slice(-4) : 'Connect Wallet';
   });
