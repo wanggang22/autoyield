@@ -118,24 +118,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 <section class="hero">
   <div class="container">
     <h1>AI 帮你在 X Layer 上<br><em>自动赚钱</em></h1>
-    <p>选一个策略，存入 USDC，AI Agent 自动执行。13 个 OKX Skills + 4 个 Uniswap Skills 驱动，零 gas，TEE 安全签名。</p>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-primary" style="font-size:1rem;padding:14px 32px" onclick="depositUSDC()">存入 USDC，开始赚钱</button>
-      <button class="btn btn-outline" style="font-size:1rem;padding:14px 32px" onclick="document.getElementById('strategies').scrollIntoView({behavior:'smooth'})">查看策略</button>
-    </div>
-    <p style="color:var(--muted);font-size:.8rem;margin-top:12px">存入一次，AI 全自动操作。Agentic Wallet TEE 安全签名，资金随时可取。</p>
-    <div id="userDeposit" style="display:none;margin-top:20px;padding:16px;background:var(--card);border-radius:var(--radius);border:1px solid var(--green)">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:.8rem;color:var(--muted)">已存入</div>
-          <div style="font-size:1.5rem;font-weight:700;color:var(--green)" id="depositAmount">0 USDC</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-sm" onclick="runStrategy('steady-yield')">执行稳健理财</button>
-          <button class="btn btn-sm" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff" onclick="runStrategy('smart-copy')">执行聪明钱跟单</button>
-        </div>
-      </div>
-    </div>
+    <p>选一个策略，x402 签名付费（零 gas），AI Agent 分析全市场给你最优建议。<br>13 个 OKX Skills + 4 个 Uniswap Skills 驱动，你的资金始终在自己钱包里。</p>
+    <button class="btn btn-primary" style="font-size:1rem;padding:14px 32px" onclick="document.getElementById('strategies').scrollIntoView({behavior:'smooth'})">选择策略</button>
+    <p style="color:var(--muted);font-size:.8rem;margin-top:12px">每次策略分析 $0.05 USDC · x402 零 gas 签名 · 资金不离开你的钱包</p>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num" id="statApy">~8.5%</div><div class="label">预估 APY</div></div>
       <div class="hero-stat"><div class="num" id="statSkills">17</div><div class="label">AI Skills</div></div>
@@ -162,7 +147,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
           <span class="skill-tag">liquidity-planner</span>
           <span class="skill-tag">okx-security</span>
         </div>
-        <button class="btn btn-primary" onclick="depositUSDC()">存入并启用</button>
+        <button class="btn btn-primary" onclick="runStrategy('steady-yield')">分析并推荐 · $0.05</button>
       </div>
 
       <div class="strategy-card">
@@ -176,7 +161,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
           <span class="skill-tag">okx-dex-swap</span>
           <span class="skill-tag">swap-integration</span>
         </div>
-        <button class="btn btn-primary" style="background:linear-gradient(135deg,#f59e0b,#f97316)" onclick="depositUSDC()">存入并启用</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#f59e0b,#f97316)" onclick="runStrategy('smart-copy')">分析并推荐 · $0.05</button>
       </div>
 
       <div class="strategy-card">
@@ -328,167 +313,58 @@ function showToast(msg, type='success') {
 }
 
 const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
-let AGENT_ADDRESS = '0x418E21F39411f513E29bFfCa1742868271Eb8a24'; // fallback, updated from /status
+let AGENT_ADDRESS = '0x418E21F39411f513E29bFfCa1742868271Eb8a24'; // Agent's Agentic Wallet, updated from /status
 
-// ERC-20 transfer ABI (just the transfer function)
-const ERC20_TRANSFER = '0xa9059cbb';
-
-let userDeposited = 0;
-
-// Deposit USDC to Agent's Agentic Wallet
-async function depositUSDC() {
+// x402 sign + execute strategy (one signature, AI does everything)
+async function runStrategy(strategyId, customRule) {
   if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
 
-  // Show deposit modal
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.onclick = function(e) { if(e.target===this) this.remove(); };
-  modal.innerHTML = `<div class="modal" style="position:relative;max-width:420px">
-    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-    <h2 style="margin-bottom:4px">存入 USDC</h2>
-    <p style="color:var(--text2);font-size:.85rem;margin-bottom:20px">
-      存入 USDC 到 AI Agent 钱包。Agent 使用 TEE 安全飞地管理资金，自动执行 DeFi 策略。
-    </p>
-    <div style="margin-bottom:16px">
-      <label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:6px">存入金额 (USDC)</label>
-      <input id="depositInput" type="number" placeholder="10" min="1" step="1" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1.1rem">
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('depositInput').value='1'">$1</button>
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('depositInput').value='5'">$5</button>
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('depositInput').value='10'">$10</button>
-    </div>
-    <div style="padding:12px;background:rgba(34,197,94,.08);border-radius:8px;margin-bottom:16px;font-size:.8rem;color:var(--text2)">
-      <strong style="color:var(--green)">安全保障：</strong>
-      私钥在 OKX TEE 安全飞地中，服务器无法访问。资金随时可请求退回。
-    </div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem" onclick="executeDeposit()">
-      通过钱包存入
-    </button>
-    <div style="margin-top:16px;padding:16px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">或直接转账到 Agent 地址（任意钱包/交易所均可）：</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <code id="agentAddrDisplay" style="flex:1;font-size:.75rem;padding:8px;background:var(--card);border-radius:6px;word-break:break-all;color:var(--cyan)">${AGENT_ADDRESS}</code>
-        <button class="btn btn-sm btn-outline" onclick="copyAddress()" style="white-space:nowrap">复制</button>
-      </div>
-      <div style="margin-top:8px;font-size:.7rem;color:var(--muted)">网络: X Layer (Chain 196) · 代币: USDC / USDT / USDG</div>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-}
+  const provider = window._provider || getProvider();
+  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
 
-function copyAddress() {
-  navigator.clipboard.writeText(AGENT_ADDRESS).then(() => {
-    showToast('地址已复制: ' + AGENT_ADDRESS.slice(0,10) + '...', 'success');
-  }).catch(() => {
-    // Fallback
-    const el = document.getElementById('agentAddrDisplay');
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    document.execCommand('copy');
-    showToast('地址已复制', 'success');
-  });
-}
-
-async function executeDeposit() {
-  const input = document.getElementById('depositInput');
-  const amount = parseFloat(input?.value || '0');
-  if (!amount || amount <= 0) { showToast('请输入存入金额', 'error'); return; }
-
-  const amountWei = '0x' + (BigInt(Math.round(amount * 1e6))).toString(16); // USDC 6 decimals
-
-  // Encode ERC-20 transfer: transfer(address to, uint256 amount)
-  const toAddrPadded = AGENT_ADDRESS.slice(2).toLowerCase().padStart(64, '0');
-  const amountPadded = BigInt(Math.round(amount * 1e6)).toString(16).padStart(64, '0');
-  const data = ERC20_TRANSFER + toAddrPadded + amountPadded;
-
-  showToast('请在 MetaMask 确认转账...', 'success');
+  showToast('x402 签名 $0.05（零 gas）...', 'success');
 
   try {
-    const txHash = await (window._provider || getProvider()).request({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: userAccount,
-        to: USDC_ADDRESS,
-        data: data,
-        value: '0x0',
-      }],
+    // Sign x402 payment (EIP-3009, zero gas, one signature covers everything)
+    const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const validBefore = Math.floor(Date.now() / 1000) + 300;
+
+    const msgParams = JSON.stringify({
+      types: {
+        EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
+        TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
+      },
+      primaryType: 'TransferWithAuthorization',
+      domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
+      message: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce },
     });
 
-    showToast('存入成功! 等待确认...', 'success');
+    const signature = await provider.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
 
-    // Update UI
-    userDeposited += amount;
-    document.getElementById('depositAmount').textContent = userDeposited.toFixed(2) + ' USDC';
-    document.getElementById('userDeposit').style.display = 'block';
+    const paymentPayload = {
+      x402Version: 1, scheme: 'exact', network: 'eip155:196',
+      payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } },
+    };
 
-    // Close modal
-    document.querySelector('.modal-overlay')?.remove();
+    showToast('AI Agent 正在执行 ' + (names[strategyId] || '策略') + '...', 'success');
 
-    // Show success with tx link
-    showToast('已存入 ' + amount + ' USDC · TX: ' + txHash.slice(0, 10) + '...', 'success');
-
-    // Notify backend
-    fetch(AGENT_URL + '/api/strategy/status?address=' + userAccount).catch(() => {});
-  } catch (err) {
-    if (err.code === 4001) {
-      showToast('交易已取消', 'error');
-    } else {
-      showToast('转账失败: ' + err.message, 'error');
-    }
-  }
-}
-
-// Execute strategy (after deposit, no more x402 signing needed)
-async function runStrategy(strategyId, customRule) {
-  if (!userAccount) { showToast('请先连接钱包', 'error'); return; }
-
-  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
-  showToast('AI Agent 正在执行 ' + (names[strategyId] || strategyId) + '...', 'success');
-
-  try {
-    // Strategy execution is free for deposited users — Agent uses Agentic Wallet TEE
+    // Call strategy with x402 payment header
     const res = await fetch(AGENT_URL + '/api/strategy/start', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)),
+      },
       body: JSON.stringify({ strategyId, userAddress: userAccount, rule: customRule || '' }),
     });
 
-    // Handle 402 — auto-sign x402 payment
-    if (res.status === 402) {
-      const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
-      const validBefore = Math.floor(Date.now() / 1000) + 300;
-      const msgParams = JSON.stringify({
-        types: {
-          EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
-          TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
-        },
-        primaryType: 'TransferWithAuthorization',
-        domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
-        message: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce },
-      });
-      showToast('需要 x402 签名 ($0.05)...', 'success');
-      const signature = await (window._provider || getProvider()).request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
-      const paymentPayload = { x402Version: 1, scheme: 'exact', network: 'eip155:196', payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } } };
-
-      showToast('AI Agent 执行中...', 'success');
-      const res2 = await fetch(AGENT_URL + '/api/strategy/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)) },
-        body: JSON.stringify({ strategyId, userAddress: userAccount, rule: customRule || '' }),
-      });
-      const data = await res2.json();
-      showStrategyResult(strategyId, data);
-      return;
-    }
-
     const data = await res.json();
+    if (res.status !== 200) { showToast('失败: ' + (data.error || res.status), 'error'); return; }
+
     showStrategyResult(strategyId, data);
   } catch (err) {
-    if (err.code === 4001) { showToast('已取消', 'error'); }
-    else { showToast('执行失败: ' + err.message, 'error'); }
+    if (err.code === 4001) { showToast('签名已取消', 'error'); }
+    else { showToast('失败: ' + err.message, 'error'); }
   }
 }
 
