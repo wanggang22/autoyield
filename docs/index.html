@@ -283,40 +283,93 @@ function showToast(msg, type='success') {
   setTimeout(() => t.remove(), 3000);
 }
 
+const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
+const PAY_TO = '0x418E21F39411f513E29bFfCa1742868271Eb8a24';
+
+const STRATEGY_PRICES = {
+  'steady-yield': { amount: '50000', display: '$0.05' },
+  'smart-copy': { amount: '50000', display: '$0.05' },
+  'custom': { amount: '50000', display: '$0.05' },
+};
+
+async function signX402Payment(amount) {
+  const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+  const validBefore = Math.floor(Date.now() / 1000) + 300;
+
+  const msgParams = JSON.stringify({
+    types: {
+      EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
+      TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
+    },
+    primaryType: 'TransferWithAuthorization',
+    domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
+    message: { from: userAccount, to: PAY_TO, value: amount, validAfter: '0', validBefore: String(validBefore), nonce },
+  });
+
+  const signature = await window.ethereum.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
+
+  return {
+    x402Version: 1, scheme: 'exact', network: 'eip155:196',
+    payload: { signature, authorization: { from: userAccount, to: PAY_TO, value: amount, validAfter: '0', validBefore: String(validBefore), nonce } },
+  };
+}
+
 async function startStrategy(strategyId) {
-  if (!userAccount) { showToast('Please connect your wallet first', 'error'); connectWallet(); return; }
-  if (strategyId === 'custom') { showToast('Custom strategy coming soon!', 'error'); return; }
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+  if (strategyId === 'custom') { showToast('自定义策略即将推出', 'error'); return; }
 
-  showToast('Starting ' + strategyId + ' strategy...', 'success');
+  const price = STRATEGY_PRICES[strategyId] || STRATEGY_PRICES['steady-yield'];
+  showToast('签名支付 ' + price.display + ' 启动策略...', 'success');
 
-  // For the hackathon demo: call the strategy endpoint
   try {
+    // Step 1: Sign x402 payment via MetaMask (zero gas, EIP-3009)
+    const paymentPayload = await signX402Payment(price.amount);
+    const paymentHeader = btoa(JSON.stringify(paymentPayload));
+
+    showToast('AI Agent 正在执行策略...', 'success');
+
+    // Step 2: Call strategy endpoint with payment
     const res = await fetch(AGENT_URL + '/api/strategy/start', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYMENT-SIGNATURE': paymentHeader,
+      },
       body: JSON.stringify({ strategyId }),
     });
 
-    if (res.status === 402) {
-      showToast('x402 payment required — sign with MetaMask to start', 'error');
-      // In production: auto-sign x402 payment here
+    const data = await res.json();
+
+    if (res.status !== 200) {
+      showToast('策略执行失败: ' + (data.error || res.status), 'error');
       return;
     }
 
-    const data = await res.json();
-    // Show result modal
+    // Step 3: Show result modal
+    const toolsHtml = (data.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
+    const resultText = data.result || JSON.stringify(data, null, 2);
+    const txHash = data.payment?.transaction;
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.onclick = function(e) { if(e.target===this) this.remove(); };
     modal.innerHTML = `<div class="modal" style="position:relative">
-      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-      <h2>Strategy: ${strategyId}</h2>
-      <p style="color:var(--text2);margin-bottom:16px">Tools used: ${(data.toolsUsed||[]).join(', ')}</p>
-      <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.6;max-height:400px;overflow-y:auto;white-space:pre-wrap">${data.result || JSON.stringify(data, null, 2)}</div>
+      <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+      <h2 style="margin-bottom:4px">${strategyId === 'steady-yield' ? '稳健理财' : '聪明钱跟单'} 执行结果</h2>
+      <p style="color:var(--green);font-size:.85rem;margin-bottom:12px">x402 支付: ${price.display} USDC (零 gas) ${txHash ? '· <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan)">查看交易</a>' : ''}</p>
+      <div style="margin-bottom:12px">${toolsHtml}</div>
+      <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.7;max-height:400px;overflow-y:auto;white-space:pre-wrap;color:var(--text)">${resultText}</div>
+      <p style="margin-top:12px;font-size:.75rem;color:var(--muted)">Powered by Claude AI + ${(data.toolsUsed||[]).length} tools · OKX OnchainOS + Uniswap</p>
     </div>`;
     document.body.appendChild(modal);
+
+    showToast('策略执行完成!', 'success');
   } catch (err) {
-    showToast('Strategy failed: ' + err.message, 'error');
+    if (err.code === 4001) {
+      showToast('签名已取消', 'error');
+    } else {
+      showToast('失败: ' + err.message, 'error');
+    }
   }
 }
 
