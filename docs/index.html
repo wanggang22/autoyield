@@ -189,7 +189,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
           <span class="skill-tag">all 17 skills</span>
           <span class="skill-tag">Claude AI</span>
         </div>
-        <button class="btn btn-outline">即将推出</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)" onclick="showCustomStrategy()">设定我的规则</button>
       </div>
 
     </div>
@@ -392,22 +392,22 @@ async function executeDeposit() {
 }
 
 // Execute strategy (after deposit, no more x402 signing needed)
-async function runStrategy(strategyId) {
+async function runStrategy(strategyId, customRule) {
   if (!userAccount) { showToast('请先连接钱包', 'error'); return; }
 
-  showToast('AI Agent 正在执行 ' + (strategyId === 'steady-yield' ? '稳健理财' : '聪明钱跟单') + '...', 'success');
+  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
+  showToast('AI Agent 正在执行 ' + (names[strategyId] || strategyId) + '...', 'success');
 
   try {
     // Strategy execution is free for deposited users — Agent uses Agentic Wallet TEE
     const res = await fetch(AGENT_URL + '/api/strategy/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ strategyId, userAddress: userAccount }),
+      body: JSON.stringify({ strategyId, userAddress: userAccount, rule: customRule || '' }),
     });
 
-    // Handle 402 (if endpoint still requires x402)
+    // Handle 402 — auto-sign x402 payment
     if (res.status === 402) {
-      // Fallback: sign x402 payment
       const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
       const validBefore = Math.floor(Date.now() / 1000) + 300;
       const msgParams = JSON.stringify({
@@ -419,13 +419,15 @@ async function runStrategy(strategyId) {
         domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
         message: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce },
       });
+      showToast('需要 x402 签名 ($0.05)...', 'success');
       const signature = await window.ethereum.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
       const paymentPayload = { x402Version: 1, scheme: 'exact', network: 'eip155:196', payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } } };
 
+      showToast('AI Agent 执行中...', 'success');
       const res2 = await fetch(AGENT_URL + '/api/strategy/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)) },
-        body: JSON.stringify({ strategyId, userAddress: userAccount }),
+        body: JSON.stringify({ strategyId, userAddress: userAccount, rule: customRule || '' }),
       });
       const data = await res2.json();
       showStrategyResult(strategyId, data);
@@ -438,6 +440,40 @@ async function runStrategy(strategyId) {
     if (err.code === 4001) { showToast('已取消', 'error'); }
     else { showToast('执行失败: ' + err.message, 'error'); }
   }
+}
+
+async function showCustomStrategy() {
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.onclick = function(e) { if(e.target===this) this.remove(); };
+  modal.innerHTML = `<div class="modal" style="position:relative;max-width:500px">
+    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+    <h2 style="margin-bottom:4px">自定义策略</h2>
+    <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">用自然语言描述你的交易规则，AI 会解析并执行。</p>
+    <div style="margin-bottom:12px">
+      <textarea id="customRuleInput" placeholder="例如：&#10;• 帮我找 X Layer 上最高收益的 USDC 理财&#10;• 跟踪聪明钱信号，分析他们买的币是否安全&#10;• 比较 OKX 和 Uniswap 上 OKB/USDC 的价格" style="width:100%;min-height:100px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;resize:vertical;font-family:var(--font)"></textarea>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='帮我找 X Layer 上收益最高的 USDC DeFi 产品'">收益搜索</button>
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='查看聪明钱最近在买什么，安全扫描后告诉我值不值得跟'">聪明钱分析</button>
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='比较 OKB 在 OKX DEX 和 Uniswap 上的价格，告诉我哪个更划算'">双引擎比价</button>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem" onclick="executeCustomStrategy()">
+      AI 执行我的策略
+    </button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function executeCustomStrategy() {
+  const input = document.getElementById('customRuleInput');
+  const rule = input?.value?.trim();
+  if (!rule) { showToast('请输入你的策略规则', 'error'); return; }
+
+  document.querySelector('.modal-overlay')?.remove();
+  runStrategy('custom', rule);
 }
 
 function showStrategyResult(strategyId, data) {
