@@ -1852,8 +1852,10 @@ app.get('/status', (_req, res) => {
     facilitator: hasOkxKeys ? 'OKX (connected)' : 'not configured',
     agenticWallet: state.agenticWallet?.available ? {
       accountName: state.agenticWallet.accountName,
+      address: state.agenticWallet.addresses?.xlayer?.[0]?.address || state.agenticWallet.addresses?.evm?.[0]?.address || null,
       method: 'TEE (Trusted Execution Environment)',
     } : 'not available (using raw key fallback)',
+    depositAddress: state.agenticWallet?.addresses?.xlayer?.[0]?.address || state.agenticWallet?.addresses?.evm?.[0]?.address || state.agentAddress,
     capabilities: {
       skills: '13 OKX Onchain OS + 4 Uniswap AI Skills',
       engines: UNISWAP_API_KEY ? ['OKX DEX Aggregator', 'Uniswap Trading API'] : ['OKX DEX Aggregator'],

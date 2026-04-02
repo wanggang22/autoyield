@@ -259,6 +259,20 @@ const AGENT_URL = 'https://autoyield-production.up.railway.app';
 const XLAYER_CHAIN_ID = '0xc4'; // 196
 let userAccount = null;
 
+// Fetch deposit address from backend
+async function loadDepositAddress() {
+  try {
+    const res = await fetch(AGENT_URL + '/status');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.depositAddress) {
+        AGENT_ADDRESS = data.depositAddress;
+        console.log('Deposit address (Agentic Wallet TEE):', AGENT_ADDRESS);
+      }
+    }
+  } catch (err) { console.log('Status load:', err.message); }
+}
+
 // Fetch live strategy data
 async function loadStrategies() {
   try {
@@ -314,7 +328,7 @@ function showToast(msg, type='success') {
 }
 
 const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
-const AGENT_ADDRESS = '0x418E21F39411f513E29bFfCa1742868271Eb8a24';
+let AGENT_ADDRESS = '0x418E21F39411f513E29bFfCa1742868271Eb8a24'; // fallback, updated from /status
 
 // ERC-20 transfer ABI (just the transfer function)
 const ERC20_TRANSFER = '0xa9059cbb';
@@ -536,6 +550,7 @@ function showStrategyResult(strategyId, data) {
 }
 
 // Init
+loadDepositAddress();
 loadStrategies();
 const _initProvider = getProvider();
 if (_initProvider) {
