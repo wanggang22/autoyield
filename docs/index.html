@@ -346,14 +346,36 @@ async function depositUSDC() {
     </div>
     <div style="padding:12px;background:rgba(34,197,94,.08);border-radius:8px;margin-bottom:16px;font-size:.8rem;color:var(--text2)">
       <strong style="color:var(--green)">安全保障：</strong>
-      Agent 钱包地址: <code style="font-size:.7rem">${AGENT_ADDRESS}</code><br>
       私钥在 OKX TEE 安全飞地中，服务器无法访问。资金随时可请求退回。
     </div>
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem" onclick="executeDeposit()">
-      确认存入 (MetaMask 签名)
+      通过钱包存入
     </button>
+    <div style="margin-top:16px;padding:16px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">或直接转账到 Agent 地址（任意钱包/交易所均可）：</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <code id="agentAddrDisplay" style="flex:1;font-size:.75rem;padding:8px;background:var(--card);border-radius:6px;word-break:break-all;color:var(--cyan)">${AGENT_ADDRESS}</code>
+        <button class="btn btn-sm btn-outline" onclick="copyAddress()" style="white-space:nowrap">复制</button>
+      </div>
+      <div style="margin-top:8px;font-size:.7rem;color:var(--muted)">网络: X Layer (Chain 196) · 代币: USDC / USDT / USDG</div>
+    </div>
   </div>`;
   document.body.appendChild(modal);
+}
+
+function copyAddress() {
+  navigator.clipboard.writeText(AGENT_ADDRESS).then(() => {
+    showToast('地址已复制: ' + AGENT_ADDRESS.slice(0,10) + '...', 'success');
+  }).catch(() => {
+    // Fallback
+    const el = document.getElementById('agentAddrDisplay');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    showToast('地址已复制', 'success');
+  });
 }
 
 async function executeDeposit() {
