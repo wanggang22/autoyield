@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoYield — AI DeFi Agent on X Layer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b14;--bg2:#12132a;--card:#1a1c3a;--card-hover:#22244a;
+  --border:#2e3160;--text:#e8e9f3;--text2:#9a9cc0;--muted:#6b6d8a;
+  --accent:#8b5cf6;--accent2:#6366f1;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--cyan:#06b6d4;
+  --gradient:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
+  --radius:12px;--font:"Inter",sans-serif;--mono:"JetBrains Mono",monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* Nav */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,11,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 0}
+nav .container{display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;font-size:1.3rem;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-weight:400;font-size:.85rem;-webkit-text-fill-color:var(--text2);margin-left:8px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.btn{padding:8px 18px;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--gradient);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-sm{padding:6px 12px;font-size:.75rem}
+
+/* Hero */
+.hero{text-align:center;padding:80px 0 60px}
+.hero h1{font-size:3rem;font-weight:800;line-height:1.1;margin-bottom:16px}
+.hero h1 em{font-style:normal;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text2);font-size:1.1rem;max-width:600px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:40px;margin-top:32px}
+.hero-stat{text-align:center}
+.hero-stat .num{font-size:1.5rem;font-weight:700;color:var(--green)}
+.hero-stat .label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+/* Strategy Cards */
+.strategies{padding:60px 0}
+.strategies h2{text-align:center;font-size:1.8rem;margin-bottom:8px}
+.strategies .sub{text-align:center;color:var(--text2);margin-bottom:40px}
+.strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+@media(max-width:768px){.strategy-grid{grid-template-columns:1fr}}
+.strategy-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;position:relative;transition:all .3s;cursor:pointer}
+.strategy-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(139,92,246,.15)}
+.strategy-card.featured{border-color:var(--accent)}
+.strategy-badge{position:absolute;top:16px;right:16px;font-size:.65rem;padding:3px 10px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.badge-low{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-med{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge-beta{background:rgba(99,102,241,.15);color:var(--accent2)}
+.strategy-icon{font-size:2rem;margin-bottom:12px}
+.strategy-card h3{font-size:1.15rem;margin-bottom:6px}
+.strategy-card .apy{font-size:1.8rem;font-weight:800;color:var(--green);margin:12px 0}
+.strategy-card .desc{color:var(--text2);font-size:.85rem;line-height:1.5;margin-bottom:16px}
+.strategy-card .skills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
+.skill-tag{font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(139,92,246,.1);color:var(--accent);font-family:var(--mono)}
+.strategy-card .btn{width:100%}
+
+/* How It Works */
+.how{padding:60px 0;border-top:1px solid var(--border)}
+.how h2{text-align:center;font-size:1.5rem;margin-bottom:32px}
+.steps{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.step{text-align:center;flex:1;min-width:200px;max-width:250px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--gradient);color:#fff;font-weight:700;font-size:1rem;margin-bottom:12px}
+.step h3{font-size:.95rem;margin-bottom:6px}
+.step p{font-size:.8rem;color:var(--text2);line-height:1.4}
+
+/* Skills Section */
+.skills-section{padding:40px 0;border-top:1px solid var(--border)}
+.skills-section h2{text-align:center;font-size:1.3rem;margin-bottom:24px}
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.skills-grid{grid-template-columns:1fr}}
+.skills-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.skills-box h3{font-size:.95rem;color:var(--accent);margin-bottom:8px}
+.skills-box p{font-size:.8rem;color:var(--text2);line-height:1.5}
+.arch-note{margin-top:16px;padding:12px;background:rgba(139,92,246,.06);border-radius:8px;font-size:.75rem;color:var(--text2);text-align:center}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:32px 0;margin-top:40px}
+footer .container{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-brand{font-weight:700;font-size:1rem}
+.footer-links{display:flex;gap:16px}
+.footer-links a{color:var(--text2);font-size:.8rem;text-decoration:none}
+.footer-links a:hover{color:var(--accent)}
+.footer-tags{display:flex;gap:8px}
+.footer-tags span{font-size:.7rem;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text2)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px)}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;padding:28px}
+.modal h2{font-size:1.3rem;margin-bottom:16px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:.85rem;z-index:300;animation:slideIn .3s}
+.toast-success{background:var(--green);color:#fff}
+.toast-error{background:var(--red);color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">AutoYield <span>AI DeFi Agent</span></div>
+    <div class="nav-right">
+      <span class="btn btn-sm btn-outline" style="color:var(--green);border-color:var(--green)">X Layer Mainnet</span>
+      <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>AI 帮你在 X Layer 上<br><em>自动赚钱</em></h1>
+    <p>选一个策略，存入 USDC，AI Agent 自动执行。13 个 OKX Skills + 4 个 Uniswap Skills 驱动，零 gas，TEE 安全签名。</p>
+    <button class="btn btn-primary" style="font-size:1rem;padding:14px 32px" onclick="document.getElementById('strategies').scrollIntoView({behavior:'smooth'})">选择策略开始赚钱</button>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num" id="statApy">~8.5%</div><div class="label">预估 APY</div></div>
+      <div class="hero-stat"><div class="num" id="statSkills">17</div><div class="label">AI Skills</div></div>
+      <div class="hero-stat"><div class="num" id="statTools">20</div><div class="label">Claude 工具</div></div>
+      <div class="hero-stat"><div class="num">0</div><div class="label">Gas 费用</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="strategies" id="strategies">
+  <div class="container">
+    <h2>选择你的赚钱策略</h2>
+    <p class="sub">AI Agent 24/7 自动执行，你睡觉它赚钱</p>
+    <div class="strategy-grid">
+
+      <div class="strategy-card featured" onclick="startStrategy('steady-yield')">
+        <span class="strategy-badge badge-low">低风险</span>
+        <div class="strategy-icon">&#128176;</div>
+        <h3>稳健理财</h3>
+        <div class="apy" id="steadyApy">~8.5% APY</div>
+        <p class="desc">AI 自动搜索 X Layer 上最高收益的 DeFi 产品（Aave 存款、Uniswap LP），定期检查再平衡。</p>
+        <div class="skills">
+          <span class="skill-tag">okx-defi-invest</span>
+          <span class="skill-tag">liquidity-planner</span>
+          <span class="skill-tag">okx-security</span>
+        </div>
+        <button class="btn btn-primary">开始稳健理财</button>
+      </div>
+
+      <div class="strategy-card" onclick="startStrategy('smart-copy')">
+        <span class="strategy-badge badge-med">中风险</span>
+        <div class="strategy-icon">&#128051;</div>
+        <h3>聪明钱跟单</h3>
+        <div class="apy">跟着大户赚</div>
+        <p class="desc">AI 实时监控鲸鱼/聪明钱信号，安全扫描通过后自动跟单，OKX vs Uniswap 双引擎最优价。</p>
+        <div class="skills">
+          <span class="skill-tag">okx-dex-signal</span>
+          <span class="skill-tag">okx-dex-swap</span>
+          <span class="skill-tag">swap-integration</span>
+        </div>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#f59e0b,#f97316)">开始聪明钱跟单</button>
+      </div>
+
+      <div class="strategy-card" onclick="startStrategy('custom')">
+        <span class="strategy-badge badge-beta">Beta</span>
+        <div class="strategy-icon">&#129302;</div>
+        <h3>自定义策略</h3>
+        <div class="apy">你说了算</div>
+        <p class="desc">用自然语言描述你的交易规则（如"ETH 跌到 3000 就买"），AI 7x24 自动执行。</p>
+        <div class="skills">
+          <span class="skill-tag">all 17 skills</span>
+          <span class="skill-tag">Claude AI</span>
+        </div>
+        <button class="btn btn-outline">即将推出</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="container">
+    <h2>三步开始赚钱</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>连接钱包</h3>
+        <p>连接 MetaMask 到 X Layer 网络，零 gas 费用。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>选择策略</h3>
+        <p>稳健理财、聪明钱跟单、或自定义规则。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>AI 自动赚钱</h3>
+        <p>AI Agent 24/7 监控市场，自动执行最优操作。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="skills-section">
+  <div class="container">
+    <h2>Skill-Driven AI: 17 个专家知识驱动决策</h2>
+    <div class="skills-grid">
+      <div class="skills-box">
+        <h3>OKX Onchain OS (13 Skills)</h3>
+        <p>安全扫描 (fail-safe) / DEX 聚合交易 (500+源) / 聪明钱信号 / 市场数据 / K线 / 代币深度分析 / Meme 扫链 / DeFi 存取 / 钱包管理 / x402 支付 / 交易广播 / 审计日志</p>
+      </div>
+      <div class="skills-box">
+        <h3>Uniswap AI (4 Skills)</h3>
+        <p>Swap 集成 (Trading API) / Swap 规划 (DexScreener) / LP 仓位规划 (价格区间+费率) / 任意代币支付 (x402)</p>
+      </div>
+    </div>
+    <div class="arch-note">
+      <strong>架构:</strong> SKILL.md 文件教 Claude AI 如何做决策（安全规则、滑点策略、MEV 保护）。API 执行决策。双引擎对比 OKX vs Uniswap 永远拿最优价。
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-brand">AutoYield</div>
+    <div class="footer-links">
+      <a href="https://web3.okx.com/xlayer" target="_blank">X Layer</a>
+      <a href="https://web3.okx.com/onchainos" target="_blank">OKX OnchainOS</a>
+      <a href="https://github.com/Uniswap/uniswap-ai" target="_blank">Uniswap AI</a>
+    </div>
+    <div class="footer-tags">
+      <span>X Layer</span>
+      <span>x402 Zero Gas</span>
+      <span>Build X Hackathon 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const AGENT_URL = 'https://xlayeragent-server-production.up.railway.app';
+const XLAYER_CHAIN_ID = '0xc4'; // 196
+let userAccount = null;
+
+// Fetch live strategy data
+async function loadStrategies() {
+  try {
+    const res = await fetch(AGENT_URL + '/api/strategies');
+    if (res.ok) {
+      const data = await res.json();
+      const steady = data.strategies?.find(s => s.id === 'steady-yield');
+      if (steady?.estimatedApy) {
+        document.getElementById('steadyApy').textContent = '~' + steady.estimatedApy + ' APY';
+        document.getElementById('statApy').textContent = '~' + steady.estimatedApy;
+      }
+    }
+  } catch (err) { console.log('Strategy load:', err.message); }
+}
+
+async function connectWallet() {
+  if (!window.ethereum) { alert('Please install MetaMask'); return; }
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    userAccount = accounts[0];
+    document.getElementById('connectBtn').textContent = userAccount.slice(0,6) + '...' + userAccount.slice(-4);
+    // Switch to X Layer
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID }] });
+    } catch (switchErr) {
+      if (switchErr.code === 4902) {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID, chainName: 'X Layer', nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 }, rpcUrls: ['https://rpc.xlayer.tech'], blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'] }] });
+      }
+    }
+  } catch (err) { console.error('Wallet connect failed:', err); }
+}
+
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function startStrategy(strategyId) {
+  if (!userAccount) { showToast('Please connect your wallet first', 'error'); connectWallet(); return; }
+  if (strategyId === 'custom') { showToast('Custom strategy coming soon!', 'error'); return; }
+
+  showToast('Starting ' + strategyId + ' strategy...', 'success');
+
+  // For the hackathon demo: call the strategy endpoint
+  try {
+    const res = await fetch(AGENT_URL + '/api/strategy/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ strategyId }),
+    });
+
+    if (res.status === 402) {
+      showToast('x402 payment required — sign with MetaMask to start', 'error');
+      // In production: auto-sign x402 payment here
+      return;
+    }
+
+    const data = await res.json();
+    // Show result modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.onclick = function(e) { if(e.target===this) this.remove(); };
+    modal.innerHTML = `<div class="modal" style="position:relative">
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+      <h2>Strategy: ${strategyId}</h2>
+      <p style="color:var(--text2);margin-bottom:16px">Tools used: ${(data.toolsUsed||[]).join(', ')}</p>
+      <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.6;max-height:400px;overflow-y:auto;white-space:pre-wrap">${data.result || JSON.stringify(data, null, 2)}</div>
+    </div>`;
+    document.body.appendChild(modal);
+  } catch (err) {
+    showToast('Strategy failed: ' + err.message, 'error');
+  }
+}
+
+// Init
+loadStrategies();
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', (accounts) => {
+    userAccount = accounts[0] || null;
+    document.getElementById('connectBtn').textContent = userAccount ? userAccount.slice(0,6)+'...'+userAccount.slice(-4) : 'Connect Wallet';
+  });
+}
+</script>
+</body>
+</html>
