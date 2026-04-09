@@ -336,8 +336,13 @@ body{margin-right:50vw}
     <div id="chatPanel-custom" class="chat-panel" style="display:none"></div>
     <!-- Empty state -->
     <div id="chatEmpty" style="padding:40px 16px;text-align:center;color:var(--muted);font-size:.85rem">
-      选择一个策略开始分析
+      选择一个策略开始分析，或直接提问
     </div>
+  </div>
+  <!-- Input bar -->
+  <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px">
+    <input id="chatInput" type="text" placeholder="追问或输入新问题..." style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;font-family:var(--font)" onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="btn btn-primary btn-sm" onclick="sendChat()" style="white-space:nowrap">发送 $0.05</button>
   </div>
 </div>
 
@@ -738,6 +743,81 @@ function toggleDashboard() {
 function showDashboard() {
   renderHistory();
   loadPositions();
+}
+
+// Send free-form question
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const question = input?.value?.trim();
+  if (!question) return;
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+
+  input.value = '';
+  const provider = window._provider || getProvider();
+  const time = new Date().toLocaleTimeString();
+
+  // Show user message in current tab
+  const emptyEl = document.getElementById('chatEmpty');
+  if (emptyEl) emptyEl.style.display = 'none';
+  const chatDiv = document.getElementById('chatPanel-' + activeTab);
+  if (!chatDiv) return;
+
+  chatDiv.innerHTML += `
+    <div class="chat-msg chat-msg-user">
+      <div class="label user-label">你 · ${time}</div>
+      <div class="body">${question}</div>
+    </div>
+    <div class="chat-msg chat-msg-agent" id="chatLoading">
+      <div class="label agent-label">AutoYield AI</div>
+      <div class="body" style="display:flex;align-items:center;gap:8px">
+        <div class="loading-spinner" style="width:16px;height:16px;border-width:2px;flex-shrink:0"></div>
+        <span style="color:var(--text2)">思考中...</span>
+      </div>
+    </div>`;
+  const body = document.getElementById('sidebarBody');
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    // x402 sign
+    const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const validBefore = Math.floor(Date.now() / 1000) + 300;
+    const msgParams = JSON.stringify({
+      types: {
+        EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
+        TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
+      },
+      primaryType: 'TransferWithAuthorization',
+      domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
+      message: { from: userAccount, to: AGENT_ADDRESS, value: '20000', validAfter: '0', validBefore: String(validBefore), nonce },
+    });
+    const signature = await provider.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
+    const paymentPayload = { x402Version: 1, scheme: 'exact', network: 'eip155:196', payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '20000', validAfter: '0', validBefore: String(validBefore), nonce } } };
+
+    const res = await fetch(AGENT_URL + '/api/ask?q=' + encodeURIComponent(question), {
+      headers: { 'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)) },
+    });
+    const data = await res.json();
+
+    const loadEl = document.getElementById('chatLoading'); if (loadEl) loadEl.remove();
+
+    const resultText = data.answer || data.result || JSON.stringify(data, null, 2);
+    const toolsHtml = (data.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
+
+    chatDiv.innerHTML += `
+      <div class="chat-msg chat-msg-agent">
+        <div class="label agent-label">AutoYield AI · ${new Date().toLocaleTimeString()}</div>
+        <div class="body">${renderMarkdown(resultText)}</div>
+        <div class="meta" style="margin-top:6px">${toolsHtml}</div>
+      </div>`;
+    body.scrollTop = body.scrollHeight;
+
+    // Save
+    saveToHistory(activeTab === 'smart-copy' ? '聪明钱跟单' : activeTab === 'custom' ? '自定义策略' : '稳健理财', { ...data, result: resultText });
+  } catch (err) {
+    const loadEl = document.getElementById('chatLoading'); if (loadEl) loadEl.remove();
+    if (err.code === 4001) { showToast('签名已取消', 'error'); }
+    else { showToast('失败: ' + err.message, 'error'); }
+  }
 }
 
 // Restore chat history from localStorage on page load
