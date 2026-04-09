@@ -574,11 +574,33 @@ function showStrategyResult(strategyId, data) {
     </div>`;
 
   // Agent response
+  const actionLinks = {
+    'steady-yield': [
+      { label: '去 Aave 存入', url: 'https://app.aave.com/?marketName=proto_xlayer_v3' },
+      { label: '去 Uniswap 添加 LP', url: 'https://app.uniswap.org/positions/create?chain=xlayer' },
+    ],
+    'smart-copy': [
+      { label: '去 Uniswap 交易', url: 'https://app.uniswap.org/swap?chain=xlayer' },
+      { label: '去 OKX DEX 交易', url: 'https://web3.okx.com/dex-swap#inputChain=196' },
+    ],
+    'custom': [
+      { label: '去 Uniswap', url: 'https://app.uniswap.org/swap?chain=xlayer' },
+      { label: '去 OKX DEX', url: 'https://web3.okx.com/dex-swap#inputChain=196' },
+      { label: '去 Aave', url: 'https://app.aave.com/?marketName=proto_xlayer_v3' },
+    ],
+  };
+  const actions = actionLinks[strategyId] || actionLinks['custom'];
+  const actionsHtml = actions.map(a => `<a href="${a.url}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.75rem">${a.label}</a>`).join(' ');
+
   chatDiv.innerHTML += `
     <div class="chat-msg chat-msg-agent">
       <div class="label agent-label">AutoYield AI · ${time}</div>
       <div class="body">${renderMarkdown(resultText)}</div>
-      <div class="meta">${toolsHtml}</div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+        ${actionsHtml}
+        <button class="btn btn-sm btn-outline" style="font-size:.75rem" onclick="runStrategy('${strategyId}')">再次分析 · $0.05</button>
+      </div>
+      <div class="meta" style="margin-top:8px">${toolsHtml}</div>
     </div>`;
 
   // Scroll to bottom

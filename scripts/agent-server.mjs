@@ -1727,7 +1727,13 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 按收益从高到低排列。
 
 ## 执行建议
-告诉用户具体该怎么操作（去哪个协议、存多少、注意什么）。`,
+告诉用户具体该怎么操作。
+
+## 一键执行链接
+给出直接操作链接（必须提供）：
+- Aave: https://app.aave.com/?marketName=proto_xlayer_v3
+- Uniswap Swap: https://app.uniswap.org/swap?chain=xlayer
+- Uniswap LP: https://app.uniswap.org/positions/create?chain=xlayer`,
 
     'smart-copy': `你是 AutoYield AI 跟单顾问。直接分析并给出结果，不要问用户问题。
 
@@ -1748,7 +1754,12 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 每个代币的安全评级（安全/警告/危险）
 
 ## 跟单建议
-值不值得跟？建议买入价、止损价（-5%）、止盈价。用哪个引擎（OKX or Uniswap）更划算。`,
+值不值得跟？建议买入价、止损价（-5%）、止盈价。用哪个引擎（OKX or Uniswap）更划算。
+
+## 一键执行链接
+给出直接交易链接（必须提供）：
+- Uniswap Swap: https://app.uniswap.org/swap?chain=xlayer
+- OKX DEX: https://web3.okx.com/dex-swap#inputChain=196`,
 
     'custom': `你是 AutoYield AI 策略顾问。直接执行用户的规则并给出结果，不要反问。
 
