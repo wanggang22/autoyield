@@ -318,8 +318,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h3>AutoYield AI</h3>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-sm btn-outline" onclick="clearHistory()" style="font-size:.65rem">清空</button>
+      <button id="pinBtn" class="btn btn-sm btn-outline" onclick="togglePin()" style="font-size:.65rem" title="固定侧边栏">&#128204; 固定</button>
       <button style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer" onclick="closeSidebar()">&times;</button>
     </div>
   </div>
@@ -514,19 +515,45 @@ function renderMarkdown(text) {
     .replace(/### (.+)/g, '<div style="font-size:.9rem;font-weight:600;color:var(--text);margin:14px 0 6px">$1</div>')
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>')
     .replace(/`([^`]+)`/g, '<code style="background:rgba(139,92,246,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:.8rem">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--cyan);text-decoration:underline">$1</a>')
+    .replace(/(https?:\/\/[^\s<"]+)/g, (m, url) => {
+      if (m.includes('</a>') || m.includes('href=')) return m;
+      return '<a href="' + url + '" target="_blank" style="color:var(--cyan);text-decoration:underline">' + (url.length > 50 ? url.slice(0, 50) + '...' : url) + '</a>';
+    })
     .replace(/^- (.+)/gm, '<div style="padding:3px 0 3px 16px;position:relative"><span style="position:absolute;left:0;color:var(--accent)">&#8227;</span> $1</div>')
     .replace(/^(\d+)\. (.+)/gm, '<div style="padding:3px 0 3px 16px"><span style="color:var(--accent);font-weight:600">$1.</span> $2</div>')
     .replace(/\n\n/g, '<div style="height:8px"></div>')
     .replace(/\n/g, '<br>');
 }
 
+let sidebarPinned = false;
+
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('open');
+  if (!sidebarPinned) document.getElementById('sidebarOverlay').classList.add('open');
 }
 function closeSidebar() {
+  if (sidebarPinned) return; // 固定模式不关闭
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
+}
+function togglePin() {
+  sidebarPinned = !sidebarPinned;
+  const btn = document.getElementById('pinBtn');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebarPinned) {
+    btn.innerHTML = '&#128204; 已固定';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+    overlay.classList.remove('open');
+    // 缩窄主内容给侧边栏让位
+    document.body.style.marginRight = '420px';
+  } else {
+    btn.innerHTML = '&#128204; 固定';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    document.body.style.marginRight = '0';
+  }
 }
 
 function showStrategyResult(strategyId, data) {
