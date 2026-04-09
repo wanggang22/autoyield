@@ -1705,23 +1705,56 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
   if (!claude) return res.status(500).json({ error: 'Claude API not configured' });
 
   const strategyPrompts = {
-    'steady-yield': `Execute STEADY YIELD strategy on X Layer:
-1. Call defi_search to find highest APY USDC products on X Layer (chain 196)
-2. Call security scan on the top product's protocol
-3. Call get_pool_data for Uniswap LP opportunities
-4. Compare DeFi deposit APY vs Uniswap LP APY
-5. Recommend the best option with specific numbers
-6. If approved, the system will execute the deposit`,
+    'steady-yield': `你是 AutoYield AI 理财顾问。直接分析并给出结果，不要问用户问题。
 
-    'smart-copy': `Execute SMART COPY strategy on X Layer:
-1. Call get_signals to fetch latest smart money / whale buy signals
-2. For the top signal, call scan_token_security to verify safety
-3. If safe, call dual_engine_quote to compare OKX vs Uniswap prices
-4. Present the trade opportunity with risk assessment
-5. Include stop-loss at -5% and take-profit recommendations`,
+任务：找到 X Layer (chain 196) 上 USDC 最高收益的 DeFi 产品。
 
-    'custom': `Execute CUSTOM STRATEGY on X Layer. User's rule: "${req.body?.rule || 'Find the best opportunity'}"
-Parse the rule and execute step by step using available tools.`,
+步骤：
+1. 调 defi_search 搜索 X Layer 上的 USDC 收益产品
+2. 调 scan_token_security 检查排名最高产品的安全性
+3. 调 get_yield_data 获取 DefiLlama 上的收益数据对比
+4. 调 dual_engine_quote 看 Uniswap LP 的机会
+
+输出格式（直接给结果，不要问用户任何问题）：
+
+## 推荐方案
+- 产品名称 + 协议 + APY
+- 安全评级
+- 风险提示
+
+## 对比
+| 方案 | APY | 风险 | 协议 |
+按收益从高到低排列。
+
+## 执行建议
+告诉用户具体该怎么操作（去哪个协议、存多少、注意什么）。`,
+
+    'smart-copy': `你是 AutoYield AI 跟单顾问。直接分析并给出结果，不要问用户问题。
+
+任务：查看当前聪明钱/鲸鱼信号，分析是否值得跟单。
+
+步骤：
+1. 调 get_signals 获取最新聪明钱买入信号
+2. 挑出最值得关注的 1-3 个信号
+3. 对每个信号调 scan_token_security 安全扫描
+4. 对安全的代币调 dual_engine_quote 比较 OKX vs Uniswap 价格
+
+输出格式（直接给结果）：
+
+## 聪明钱最新动向
+列出 3 个最值得关注的信号（代币、买入金额、钱包类型）
+
+## 安全分析
+每个代币的安全评级（安全/警告/危险）
+
+## 跟单建议
+值不值得跟？建议买入价、止损价（-5%）、止盈价。用哪个引擎（OKX or Uniswap）更划算。`,
+
+    'custom': `你是 AutoYield AI 策略顾问。直接执行用户的规则并给出结果，不要反问。
+
+用户规则：${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
+
+根据规则选择合适的工具执行，直接给出分析结果和操作建议。`,
   };
 
   const prompt = strategyPrompts[strategyId] || strategyPrompts['steady-yield'];
