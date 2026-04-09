@@ -2011,6 +2011,15 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 - 必须用中文输出，结构化（标题、列表、表格）
 - 给出可执行的建议（具体代币、金额、操作步骤）
 
+如果推荐了具体的代币，必须在末尾按以下格式列出（前端会解析生成一键买入按钮）：
+[BUY:代币符号:代币合约地址]
+
+例如：
+[BUY:LIONESS:8xKp...pump]
+[BUY:GIGGLES:9xJk...pump]
+
+每个推荐的代币一行。
+
 用户规则：${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
 
 根据规则选择合适的工具执行，调用足够工具后给出最终分析结果。`,

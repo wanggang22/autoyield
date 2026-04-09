@@ -616,9 +616,12 @@ function getActionButtons(strategyId) {
       </div>`;
   }
 
-  return `
-    <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
-    <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Aave</a>`;
+  // Custom strategy - dynamic buy buttons + fallback links
+  return `<div id="dynamicBuyButtons" style="width:100%"></div>
+    <div style="width:100%;display:flex;gap:4px;margin-top:4px">
+      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Uniswap</a>
+      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Aave</a>
+    </div>`;
 }
 
 function showStrategyResult(strategyId, data) {
@@ -666,7 +669,7 @@ function showStrategyResult(strategyId, data) {
   showToast('分析完成!', 'success');
 
   // Parse [BUY:TOKEN:ADDRESS] tags and generate buy buttons
-  if (strategyId === 'smart-copy') {
+  if (strategyId === 'smart-copy' || strategyId === 'custom') {
     const buyMatches = resultText.matchAll(/\[BUY:([^:]+):([^\]]+)\]/g);
     const buyPanel = chatDiv.querySelector('#dynamicBuyButtons') || document.querySelectorAll('#dynamicBuyButtons');
     const lastPanel = buyPanel[buyPanel.length - 1] || buyPanel;
