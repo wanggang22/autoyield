@@ -1639,7 +1639,7 @@ app.get('/api/execute/swap', async (req, res) => {
   try {
     // Get swap calldata from OKX aggregator
     const result = await okxRequest('GET',
-      `/api/v6/dex/aggregator/swap?chainIndex=196&fromTokenAddress=${from}&toTokenAddress=${to}&amount=${amount}&userWalletAddress=${wallet}&slippage=0.01`
+      `/api/v6/dex/aggregator/swap?chainIndex=196&fromTokenAddress=${from}&toTokenAddress=${to}&amount=${amount}&userWalletAddress=${wallet}&slippagePercent=1`
     );
 
     if (result?.code === '0' && result?.data?.[0]?.tx) {
