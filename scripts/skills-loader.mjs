@@ -176,7 +176,7 @@ REPLY LANGUAGE: Always reply in the same language as the user's question.
   const okxSkills = config?.okx || OKX_SKILLS;
   const uniSkills = config?.uniswap || UNISWAP_SKILLS;
   // Strategy-specific: load full content (300 lines). Generic/custom: truncate (80 lines)
-  const maxLines = (strategyId && strategyId !== 'custom') ? 300 : 80;
+  const maxLines = (strategyId && strategyId !== 'custom') ? 600 : 80;
 
   // Load OKX Skills
   sections.push('\n## OKX Onchain OS Skills Knowledge\n');
