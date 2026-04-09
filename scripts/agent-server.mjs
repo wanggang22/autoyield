@@ -1636,7 +1636,10 @@ const monitors = {}; // { walletAddress: { strategy, alerts[], lastCheck, active
 async function monitorLoop() {
   for (const [wallet, mon] of Object.entries(monitors)) {
     if (!mon.active) continue;
-    if (Date.now() - mon.lastCheck < 60000) continue; // 60s interval
+    // 稳健理财: 30分钟检查一次（收益率变化慢）
+    // 聪明钱跟单: 2分钟检查一次（信号时效性强）
+    const interval = mon.strategy === 'steady-yield' ? 30 * 60000 : 2 * 60000;
+    if (Date.now() - mon.lastCheck < interval) continue;
     mon.lastCheck = Date.now();
 
     try {
