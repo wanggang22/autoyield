@@ -1807,6 +1807,15 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 
   const prompt = strategyPrompts[strategyId] || strategyPrompts['steady-yield'];
 
+  // Load strategy-specific Skill prompt (full content, fewer skills)
+  let strategySkillPrompt;
+  try {
+    strategySkillPrompt = buildSkillPrompt(strategyId);
+    log(`  Strategy prompt: ~${Math.round(strategySkillPrompt.length / 4)} tokens for ${strategyId}`);
+  } catch (err) {
+    strategySkillPrompt = SKILL_SYSTEM_PROMPT;
+  }
+
   const MAX_ROUNDS = 4;
   const allToolsUsed = [];
   const allToolData = {};
@@ -1820,7 +1829,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
       response = await claude.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
-        system: SKILL_SYSTEM_PROMPT,
+        system: strategySkillPrompt,
         tools: ASK_TOOLS,
         messages,
       });

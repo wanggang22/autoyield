@@ -122,10 +122,26 @@ function extractEssentials(content, maxLines = 300) {
   return essential.join('\n').trim();
 }
 
+// Strategy-specific skill sets (load full content for relevant skills only)
+const STRATEGY_SKILLS = {
+  'steady-yield': {
+    okx: ['okx-security', 'okx-defi-invest', 'okx-defi-portfolio', 'okx-dex-market', 'okx-wallet-portfolio'],
+    uniswap: [{ plugin: 'uniswap-driver', skill: 'liquidity-planner' }],
+  },
+  'smart-copy': {
+    okx: ['okx-security', 'okx-dex-signal', 'okx-dex-swap', 'okx-dex-token', 'okx-dex-market'],
+    uniswap: [{ plugin: 'uniswap-trading', skill: 'swap-integration' }],
+  },
+  'custom': {
+    okx: OKX_SKILLS,
+    uniswap: UNISWAP_SKILLS,
+  },
+};
+
 /**
- * Load and build the complete system prompt from Skills
+ * Load and build system prompt — optionally scoped to a strategy
  */
-export function buildSkillPrompt() {
+export function buildSkillPrompt(strategyId) {
   const sections = [];
 
   // Header
@@ -155,42 +171,46 @@ ECONOMIC LOOP AWARENESS:
 REPLY LANGUAGE: Always reply in the same language as the user's question.
 `);
 
+  // Select skills based on strategy
+  const config = strategyId ? STRATEGY_SKILLS[strategyId] : null;
+  const okxSkills = config?.okx || OKX_SKILLS;
+  const uniSkills = config?.uniswap || UNISWAP_SKILLS;
+  // Strategy-specific: load full content (300 lines). Generic/custom: truncate (80 lines)
+  const maxLines = (strategyId && strategyId !== 'custom') ? 300 : 80;
+
   // Load OKX Skills
   sections.push('\n## OKX Onchain OS Skills Knowledge\n');
-  for (const skillName of OKX_SKILLS) {
-    // Check local bundled copy first, then external repo
+  for (const skillName of okxSkills) {
     const localPath = join(LOCAL_OKX_DIR, `${skillName}.md`);
     const extPath = join(EXT_OKX_DIR, skillName, 'SKILL.md');
     const skillPath = existsSync(localPath) ? localPath : extPath;
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, skillName === 'okx-security' ? 120 : 80);
+      const extracted = extractEssentials(content, skillName === 'okx-security' ? maxLines : maxLines);
       if (extracted) {
         sections.push(`### ${skillName}\n${extracted}\n`);
       }
-    } catch (err) {
-      // Skip unreadable files
-    }
+    } catch (err) {}
   }
 
   // Load Uniswap Skills
   sections.push('\n## Uniswap AI Skills Knowledge\n');
-  for (const { plugin, skill } of UNISWAP_SKILLS) {
-    // Check local bundled copy first, then external repo
+  for (const item of uniSkills) {
+    const plugin = item.plugin;
+    const skill = item.skill;
+    if (!plugin || !skill) continue;
     const localPath = join(LOCAL_UNISWAP_DIR, `${skill}.md`);
     const extPath = join(EXT_UNISWAP_DIR, plugin, 'skills', skill, 'SKILL.md');
     const skillPath = existsSync(localPath) ? localPath : extPath;
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, 80);
+      const extracted = extractEssentials(content, maxLines);
       if (extracted) {
         sections.push(`### ${skill}\n${extracted}\n`);
       }
-    } catch (err) {
-      // Skip unreadable files
-    }
+    } catch (err) {}
   }
 
   // Trading strategy reference (from okx-dex-swap SKILL.md)
