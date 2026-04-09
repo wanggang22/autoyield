@@ -52,7 +52,7 @@ const UNISWAP_SKILLS = [
  * Keeps: name, command index, safety rules, execution flow, risk controls
  * Drops: verbose CLI reference, troubleshooting, examples, pre-flight checks
  */
-function extractEssentials(content, maxLines = 50) {
+function extractEssentials(content, maxLines = 300) {
   const lines = content.split('\n');
   const essential = [];
   let inSection = false;
@@ -165,7 +165,7 @@ REPLY LANGUAGE: Always reply in the same language as the user's question.
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, skillName === 'okx-security' ? 70 : 40);
+      const extracted = extractEssentials(content, skillName === 'okx-security' ? 300 : 200);
       if (extracted) {
         sections.push(`### ${skillName}\n${extracted}\n`);
       }
@@ -184,7 +184,7 @@ REPLY LANGUAGE: Always reply in the same language as the user's question.
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, 35);
+      const extracted = extractEssentials(content, 200);
       if (extracted) {
         sections.push(`### ${skill}\n${extracted}\n`);
       }
