@@ -322,8 +322,11 @@ body{margin-right:50vw}
   <div style="flex-shrink:0;border-bottom:1px solid var(--border)">
     <div class="sidebar-section" id="sidebarPositions" style="padding:10px 16px;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <h4 style="margin:0;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">DeFi 仓位</h4>
-        <span id="sidebarPosContent" style="font-size:.8rem;color:var(--text2)">连接钱包查看</span>
+        <h4 style="margin:0;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">AI 监控</h4>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="sidebarPosContent" style="font-size:.8rem;color:var(--text2)">连接钱包启用</span>
+          <button id="stopMonitorBtn" class="btn btn-sm btn-outline" style="font-size:.6rem;display:none;padding:3px 8px;color:var(--red);border-color:var(--red)" onclick="stopMonitor()">停止</button>
+        </div>
       </div>
     </div>
     <div style="display:flex" id="chatTabs">
@@ -685,6 +688,9 @@ function showStrategyResult(strategyId, data) {
   // Save to history
   saveToHistory(strategyId, data);
 
+  // Start 24/7 monitoring
+  if (strategyId !== 'custom') startMonitor(strategyId);
+
   // Update positions
   loadPositions();
 }
@@ -958,6 +964,97 @@ async function sendChat() {
     if (err.code === 4001) { showToast('签名已取消', 'error'); }
     else { showToast('失败: ' + err.message, 'error'); }
   }
+}
+
+// ── 24/7 Monitor ──
+
+let monitorActive = false;
+let monitorInterval = null;
+
+async function startMonitor(strategy) {
+  if (!userAccount || monitorActive) return;
+  try {
+    const res = await fetch(AGENT_URL + '/api/monitor/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: userAccount, strategy }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      monitorActive = true;
+      showToast('24/7 监控已启动', 'success');
+      const stopBtn = document.getElementById('stopMonitorBtn');
+      if (stopBtn) stopBtn.style.display = 'inline-block';
+      // Update sidebar positions area
+      const posContent = document.getElementById('sidebarPosContent');
+      if (posContent) posContent.innerHTML = '<span style="color:var(--green)">● 监控中</span> ' + (strategy === 'steady-yield' ? '稳健理财' : '聪明钱跟单');
+      // Start polling for alerts
+      monitorInterval = setInterval(pollAlerts, 15000);
+    }
+  } catch (err) { console.log('Monitor start failed:', err.message); }
+}
+
+async function stopMonitor() {
+  if (!userAccount) return;
+  try {
+    await fetch(AGENT_URL + '/api/monitor/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: userAccount }),
+    });
+  } catch {}
+  monitorActive = false;
+  if (monitorInterval) clearInterval(monitorInterval);
+  const posContent = document.getElementById('sidebarPosContent');
+  if (posContent) posContent.innerHTML = '监控已停止';
+  showToast('监控已停止', 'success');
+}
+
+async function pollAlerts() {
+  if (!userAccount || !monitorActive) return;
+  try {
+    const res = await fetch(AGENT_URL + '/api/monitor/alerts?wallet=' + userAccount);
+    const data = await res.json();
+    if (!data.alerts?.length) return;
+
+    for (const alert of data.alerts) {
+      // Show alert in current tab
+      const chatDiv = document.getElementById('chatPanel-' + activeTab);
+      if (!chatDiv) continue;
+
+      const emptyEl = document.getElementById('chatEmpty');
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      let actionHtml = '';
+      if (alert.action?.type === 'swap' && alert.action.toToken) {
+        const uid = 'alert' + alert.id;
+        actionHtml = `
+          <div style="margin-top:8px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
+            <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
+            <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${alert.action.fromToken}','${alert.action.toToken}')">买入</button>
+          </div>`;
+      } else if (alert.action?.url) {
+        actionHtml = `<a href="${alert.action.url}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;margin-top:8px;display:inline-block">去执行</a>`;
+      }
+
+      chatDiv.innerHTML += `
+        <div class="chat-msg chat-msg-agent" style="border-left:3px solid var(--yellow)">
+          <div class="label" style="color:var(--yellow)">● 实时提醒 · ${new Date(alert.timestamp).toLocaleTimeString()}</div>
+          <div class="body">
+            <strong>${alert.title}</strong><br>${alert.message}
+            ${actionHtml}
+          </div>
+        </div>`;
+
+      const body = document.getElementById('sidebarBody');
+      body.scrollTop = body.scrollHeight;
+
+      showToast('新提醒: ' + alert.title, 'success');
+    }
+  } catch (err) { console.log('Poll alerts:', err.message); }
 }
 
 // Restore chat history from localStorage on page load

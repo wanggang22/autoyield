@@ -1628,6 +1628,113 @@ app.get('/api/economic-loop', x402Guard('/api/economic-loop'), async (req, res) 
   res.json(response);
 });
 
+// ── AutoYield 24/7 Monitor Engine ────────────────────────────────────────────
+
+const monitors = {}; // { walletAddress: { strategy, alerts[], lastCheck, active } }
+
+// Background monitoring loop
+async function monitorLoop() {
+  for (const [wallet, mon] of Object.entries(monitors)) {
+    if (!mon.active) continue;
+    if (Date.now() - mon.lastCheck < 60000) continue; // 60s interval
+    mon.lastCheck = Date.now();
+
+    try {
+      log(`[monitor] Checking ${mon.strategy} for ${wallet.slice(0, 8)}...`);
+
+      if (mon.strategy === 'steady-yield') {
+        // Check if better yields available
+        const products = await defiSearch('196', 'USDC', 'SINGLE_EARN');
+        const yields = await defillamaYields();
+        const topApy = products?.[0]?.apy || yields?.[0]?.apy;
+        if (topApy && parseFloat(topApy) > (mon.lastApy || 0) * 1.1) {
+          mon.alerts.push({
+            id: Date.now(),
+            type: 'yield_change',
+            title: '发现更高收益',
+            message: `${products?.[0]?.platformName || 'DeFi'} 上 USDC APY 达到 ${topApy}%，高于当前仓位`,
+            action: { type: 'defi', url: 'https://app.aave.com/?marketName=proto_xlayer_v3' },
+            timestamp: new Date().toISOString(),
+          });
+          mon.lastApy = parseFloat(topApy);
+        }
+      }
+
+      if (mon.strategy === 'smart-copy') {
+        // Check for new whale signals
+        const signals = await getSignals('196', '1');
+        if (signals?.length) {
+          const top = signals[0];
+          const tokenAddr = top.tokenContractAddress || top.tokenAddress || '';
+          // Security check
+          const security = tokenAddr ? await scanTokenSecurity('196', tokenAddr) : null;
+          const isSafe = !security?.[0]?.riskLevel || security[0].riskLevel !== 'block';
+
+          if (isSafe && tokenAddr) {
+            mon.alerts.push({
+              id: Date.now(),
+              type: 'signal',
+              title: '聪明钱信号',
+              message: `鲸鱼买入 ${top.tokenSymbol || '未知代币'}，已通过安全扫描`,
+              action: { type: 'swap', fromToken: '0x74b7F16337b8972027F6196A17a631aC6dE26d22', toToken: tokenAddr },
+              timestamp: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    } catch (err) {
+      log(`[monitor] Error: ${err.message}`);
+    }
+  }
+}
+
+// Run monitor every 30 seconds
+setInterval(monitorLoop, 30000);
+
+// POST /api/monitor/start — Start 24/7 monitoring
+app.post('/api/monitor/start', express.json(), (req, res) => {
+  const { wallet, strategy } = req.body || {};
+  if (!wallet || !strategy) return res.status(400).json({ error: 'wallet and strategy required' });
+
+  monitors[wallet] = {
+    strategy,
+    alerts: [],
+    lastCheck: 0,
+    lastApy: 0,
+    active: true,
+    startedAt: new Date().toISOString(),
+  };
+  log(`[monitor] Started ${strategy} for ${wallet.slice(0, 8)}...`);
+  res.json({ success: true, message: `${strategy} 监控已启动，AI 将 24/7 为你守护` });
+});
+
+// POST /api/monitor/stop — Stop monitoring
+app.post('/api/monitor/stop', express.json(), (req, res) => {
+  const { wallet } = req.body || {};
+  if (monitors[wallet]) {
+    monitors[wallet].active = false;
+    res.json({ success: true, message: '监控已停止' });
+  } else {
+    res.json({ success: false, error: '未找到监控' });
+  }
+});
+
+// GET /api/monitor/alerts — Get pending alerts
+app.get('/api/monitor/alerts', (req, res) => {
+  const wallet = req.query.wallet;
+  if (!wallet || !monitors[wallet]) return res.json({ alerts: [], active: false });
+
+  const mon = monitors[wallet];
+  const alerts = [...mon.alerts];
+  mon.alerts = []; // Clear after reading
+  res.json({
+    active: mon.active,
+    strategy: mon.strategy,
+    alerts,
+    since: mon.startedAt,
+  });
+});
+
 // ── AutoYield Strategy Endpoints ─────────────────────────────────────────────
 
 // GET /api/execute/swap — Get swap calldata for one-click execution
