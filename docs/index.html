@@ -718,7 +718,52 @@ function showDashboard() {
   loadPositions();
 }
 
+// Restore chat history from localStorage on page load
+function restoreHistory() {
+  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
+  if (!history.length) return;
+  const emptyEl = document.getElementById('chatEmpty');
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  // Group by strategy
+  const grouped = {};
+  for (const h of history.reverse()) {
+    const stratMap = { '稳健理财': 'steady-yield', '聪明钱跟单': 'smart-copy', '自定义策略': 'custom' };
+    const tabId = stratMap[h.strategy] || 'custom';
+    if (!grouped[tabId]) grouped[tabId] = [];
+    grouped[tabId].push(h);
+  }
+
+  for (const [tabId, items] of Object.entries(grouped)) {
+    const panel = document.getElementById('chatPanel-' + tabId);
+    if (!panel) continue;
+    for (const h of items) {
+      const time = new Date(h.timestamp).toLocaleTimeString();
+      const toolsHtml = (h.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
+      panel.innerHTML += `
+        <div class="chat-msg chat-msg-user">
+          <div class="label user-label">你 · ${time}</div>
+          <div class="body">执行${h.strategy}分析</div>
+          ${h.txHash ? '<div class="meta"><a href="https://www.okx.com/web3/explorer/xlayer/tx/' + h.txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a></div>' : ''}
+        </div>
+        <div class="chat-msg chat-msg-agent">
+          <div class="label agent-label">AutoYield AI · ${time}</div>
+          <div class="body">${renderMarkdown(h.result || '')}</div>
+          <div class="meta">${toolsHtml}</div>
+        </div>`;
+    }
+  }
+
+  // Show the tab that has the most recent message
+  if (history.length) {
+    const latest = history[history.length - 1];
+    const stratMap = { '稳健理财': 'steady-yield', '聪明钱跟单': 'smart-copy', '自定义策略': 'custom' };
+    switchTab(stratMap[latest.strategy] || 'steady-yield');
+  }
+}
+
 // Init
+restoreHistory();
 loadStrategies();
 const _initProvider = getProvider();
 if (_initProvider) {
