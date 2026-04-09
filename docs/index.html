@@ -318,19 +318,22 @@ body{margin-right:50vw}
     <h3>AutoYield AI</h3>
     <button class="btn btn-sm btn-outline" onclick="clearHistory()" style="font-size:.65rem">清空对话</button>
   </div>
+  <!-- Sticky tabs + positions (don't scroll away) -->
+  <div style="flex-shrink:0;border-bottom:1px solid var(--border)">
+    <div class="sidebar-section" id="sidebarPositions" style="padding:10px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4 style="margin:0;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">DeFi 仓位</h4>
+        <span id="sidebarPosContent" style="font-size:.8rem;color:var(--text2)">连接钱包查看</span>
+      </div>
+    </div>
+    <div style="display:flex" id="chatTabs">
+      <button class="chat-tab active" onclick="switchTab('steady-yield')" id="tab-steady-yield" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">稳健理财</button>
+      <button class="chat-tab" onclick="switchTab('smart-copy')" id="tab-smart-copy" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.78rem;cursor:pointer">聪明钱跟单</button>
+      <button class="chat-tab" onclick="switchTab('custom')" id="tab-custom" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.78rem;cursor:pointer">自定义策略</button>
+    </div>
+  </div>
+  <!-- Scrollable chat area -->
   <div class="sidebar-body" id="sidebarBody">
-    <!-- Positions -->
-    <div class="sidebar-section" id="sidebarPositions">
-      <h4>DeFi 仓位</h4>
-      <div id="sidebarPosContent" style="font-size:.83rem;color:var(--text2)">连接钱包查看</div>
-    </div>
-    <!-- Strategy tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0" id="chatTabs">
-      <button class="chat-tab active" onclick="switchTab('steady-yield')" id="tab-steady-yield" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-size:.75rem;cursor:pointer;font-weight:600">稳健理财</button>
-      <button class="chat-tab" onclick="switchTab('smart-copy')" id="tab-smart-copy" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.75rem;cursor:pointer">聪明钱跟单</button>
-      <button class="chat-tab" onclick="switchTab('custom')" id="tab-custom" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.75rem;cursor:pointer">自定义</button>
-    </div>
-    <!-- Chat panels per strategy -->
     <div id="chatPanel-steady-yield" class="chat-panel"></div>
     <div id="chatPanel-smart-copy" class="chat-panel" style="display:none"></div>
     <div id="chatPanel-custom" class="chat-panel" style="display:none"></div>
