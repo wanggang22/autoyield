@@ -629,7 +629,7 @@ function saveToHistory(strategyId, data) {
   history.unshift({
     strategy: names[strategyId] || strategyId,
     toolsUsed: data.toolsUsed || [],
-    result: (data.result || '').slice(0, 500),
+    result: data.result || data.answer || '',
     txHash: data.payment?.transaction || null,
     timestamp: new Date().toISOString(),
   });
