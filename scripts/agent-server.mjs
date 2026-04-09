@@ -532,7 +532,7 @@ async function askClaude(systemPrompt, userMessage) {
   if (!claude) return '(Claude API not configured — set ANTHROPIC_API_KEY)';
   try {
     const msg = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
@@ -1141,7 +1141,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
     log(`  Round ${round + 1}...`);
 
     const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
       system: SKILL_SYSTEM_PROMPT,
       tools: ASK_TOOLS,
@@ -1285,7 +1285,7 @@ Execute the FULL strategy, not just the first step. Use multiple tool rounds.`;
   for (let round = 0; round < MAX_ROUNDS; round++) {
     log(`  Strategy round ${round + 1}...`);
     const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       system: strategyPrompt,
       tools: ASK_TOOLS,
@@ -1734,13 +1734,36 @@ Parse the rule and execute step by step using available tools.`,
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     log(`  Strategy ${strategyId} round ${round + 1}...`);
-    const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: SKILL_SYSTEM_PROMPT,
-      tools: ASK_TOOLS,
-      messages,
-    });
+    let response;
+    try {
+      response = await claude.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        system: SKILL_SYSTEM_PROMPT,
+        tools: ASK_TOOLS,
+        messages,
+      });
+    } catch (err) {
+      if (err.status === 429) {
+        log(`  Rate limited, waiting 5s...`);
+        await new Promise(r => setTimeout(r, 5000));
+        try {
+          response = await claude.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2048,
+            system: SKILL_SYSTEM_PROMPT,
+            tools: ASK_TOOLS,
+            messages,
+          });
+        } catch (retryErr) {
+          finalAnswer = `(Strategy paused at round ${round + 1} due to rate limit. Partial results above.)`;
+          break;
+        }
+      } else {
+        finalAnswer = `(Error at round ${round + 1}: ${err.message})`;
+        break;
+      }
+    }
 
     messages.push({ role: 'assistant', content: response.content });
 

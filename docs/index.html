@@ -101,6 +101,11 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 .toast-success{background:var(--green);color:#fff}
 .toast-error{background:var(--red);color:#fff}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:250;flex-direction:column;gap:16px}
+.loading-spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -332,7 +337,14 @@ async function runStrategy(strategyId, customRule) {
       payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } },
     };
 
-    showToast('AI Agent 正在执行 ' + (names[strategyId] || '策略') + '...', 'success');
+    // Show loading overlay
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'loading-overlay';
+    loadingEl.id = 'strategyLoading';
+    loadingEl.innerHTML = `<div class="loading-spinner"></div>
+      <div style="color:var(--text);font-size:1.1rem;font-weight:600">AI Agent 正在执行${names[strategyId] || '策略'}...</div>
+      <div style="color:var(--text2);font-size:.8rem">安全扫描 → DeFi 搜索 → 双引擎比价 → 生成建议（约 15-30 秒）</div>`;
+    document.body.appendChild(loadingEl);
 
     // Call strategy with x402 payment header
     const res = await fetch(AGENT_URL + '/api/strategy/start', {
@@ -345,10 +357,12 @@ async function runStrategy(strategyId, customRule) {
     });
 
     const data = await res.json();
+    document.getElementById('strategyLoading')?.remove();
     if (res.status !== 200) { showToast('失败: ' + (data.error || res.status), 'error'); return; }
 
     showStrategyResult(strategyId, data);
   } catch (err) {
+    document.getElementById('strategyLoading')?.remove();
     if (err.code === 4001) { showToast('签名已取消', 'error'); }
     else { showToast('失败: ' + err.message, 'error'); }
   }
