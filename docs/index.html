@@ -330,8 +330,16 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <h4>DeFi 仓位</h4>
       <div id="sidebarPosContent" style="font-size:.83rem;color:var(--text2)">连接钱包查看</div>
     </div>
-    <!-- Chat messages -->
-    <div id="chatMessages"></div>
+    <!-- Strategy tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0" id="chatTabs">
+      <button class="chat-tab active" onclick="switchTab('steady-yield')" id="tab-steady-yield" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-size:.75rem;cursor:pointer;font-weight:600">稳健理财</button>
+      <button class="chat-tab" onclick="switchTab('smart-copy')" id="tab-smart-copy" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.75rem;cursor:pointer">聪明钱跟单</button>
+      <button class="chat-tab" onclick="switchTab('custom')" id="tab-custom" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.75rem;cursor:pointer">自定义</button>
+    </div>
+    <!-- Chat panels per strategy -->
+    <div id="chatPanel-steady-yield" class="chat-panel"></div>
+    <div id="chatPanel-smart-copy" class="chat-panel" style="display:none"></div>
+    <div id="chatPanel-custom" class="chat-panel" style="display:none"></div>
     <!-- Empty state -->
     <div id="chatEmpty" style="padding:40px 16px;text-align:center;color:var(--muted);font-size:.85rem">
       选择一个策略开始分析
@@ -435,9 +443,10 @@ async function runStrategy(strategyId, customRule) {
 
     // Open sidebar with loading state
     openSidebar();
+    switchTab(strategyId);
     const emptyEl = document.getElementById('chatEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
-    const chatDiv = document.getElementById('chatMessages');
+    const chatDiv = document.getElementById('chatPanel-' + strategyId);
     chatDiv.innerHTML += `
       <div class="chat-msg chat-msg-user">
         <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
@@ -527,6 +536,24 @@ function renderMarkdown(text) {
 }
 
 let sidebarPinned = false;
+let activeTab = 'steady-yield';
+
+function switchTab(tabId) {
+  activeTab = tabId;
+  document.querySelectorAll('.chat-tab').forEach(t => {
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = 'var(--muted)';
+    t.style.fontWeight = '400';
+  });
+  const tab = document.getElementById('tab-' + tabId);
+  if (tab) { tab.style.borderBottomColor = 'var(--accent)'; tab.style.color = 'var(--text)'; tab.style.fontWeight = '600'; }
+  document.querySelectorAll('.chat-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById('chatPanel-' + tabId);
+  if (panel) panel.style.display = 'block';
+  // Hide empty state if panel has content
+  const emptyEl = document.getElementById('chatEmpty');
+  if (emptyEl) emptyEl.style.display = panel && panel.innerHTML.trim() ? 'none' : 'block';
+}
 
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
@@ -568,7 +595,11 @@ function showStrategyResult(strategyId, data) {
   const emptyEl = document.getElementById('chatEmpty');
   if (emptyEl) emptyEl.style.display = 'none';
 
-  const chatDiv = document.getElementById('chatMessages');
+  // Switch to this strategy's tab
+  switchTab(strategyId);
+
+  const chatDiv = document.getElementById('chatPanel-' + strategyId);
+  if (!chatDiv) return;
 
   // User message
   chatDiv.innerHTML += `
@@ -650,8 +681,7 @@ function expandHistory(i) {
 function clearHistory() {
   localStorage.removeItem('autoyield_history');
   renderHistory();
-  const chatDiv = document.getElementById('chatMessages');
-  if (chatDiv) chatDiv.innerHTML = '';
+  document.querySelectorAll('.chat-panel').forEach(p => p.innerHTML = '');
   const emptyEl = document.getElementById('chatEmpty');
   if (emptyEl) emptyEl.style.display = 'block';
   showToast('历史已清空', 'success');
