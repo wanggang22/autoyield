@@ -583,18 +583,22 @@ function getActionButtons(strategyId) {
   }
 
   if (strategyId === 'smart-copy') {
+    const uid = 'swap' + Date.now();
     return `
       <div style="width:100%">
         <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">一键买入 OKB（USDC → OKB）</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','10000000')">$10</button>
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','50000000')">$50</button>
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','100000000')">$100</button>
-          <button class="btn btn-sm btn-outline" style="font-size:.7rem" onclick="showCustomSwap('${USDC}','${OKB}')">自定义</button>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
+          <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem" oninput="document.querySelectorAll('.swap-amt-btn[data-uid=${uid}]').forEach(b=>{b.style.borderColor='';b.style.color='var(--text)'})">
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC}','${OKB}')">执行买入</button>
         </div>
       </div>
-      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;background:linear-gradient(135deg,#3b82f6,#6366f1)">去 Uniswap</a>
-      <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;background:linear-gradient(135deg,#3b82f6,#6366f1)">去 OKX DEX</a>`;
+      <div style="width:100%;display:flex;gap:4px;margin-top:4px">
+        <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Uniswap</a>
+        <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 OKX DEX</a>
+      </div>`;
   }
 
   return `
@@ -777,6 +781,28 @@ function showDashboard() {
   loadPositions();
 }
 
+// Swap amount selection
+function selectSwapAmount(btn, uid, amount) {
+  // Deselect all buttons in this group
+  document.querySelectorAll('.swap-amt-btn[data-uid="' + uid + '"]').forEach(b => {
+    b.style.borderColor = '';
+    b.style.color = 'var(--text)';
+  });
+  // Select this button
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--accent)';
+  // Set value in input
+  const input = document.getElementById('input-' + uid);
+  if (input) input.value = amount;
+}
+
+function executeSwapFromInput(uid, fromToken, toToken) {
+  const input = document.getElementById('input-' + uid);
+  const amount = parseFloat(input?.value || '0');
+  if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
+  executeSwap(fromToken, toToken, String(Math.round(amount * 1e6)));
+}
+
 // One-click swap execution
 async function executeSwap(fromToken, toToken, amount) {
   if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
@@ -825,24 +851,6 @@ async function executeSwap(fromToken, toToken, amount) {
     if (err.code === 4001) { showToast('交易已取消', 'error'); }
     else { showToast('交易失败: ' + err.message, 'error'); }
   }
-}
-
-function showCustomSwap(fromToken, toToken) {
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.onclick = function(e) { if(e.target===this) this.remove(); };
-  modal.innerHTML = `<div class="modal" style="position:relative;max-width:360px">
-    <button style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-    <h2 style="font-size:1.1rem;margin-bottom:12px">自定义金额买入</h2>
-    <div style="margin-bottom:12px">
-      <label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:4px">USDC 金额</label>
-      <input id="customSwapAmount" type="number" placeholder="输入 USDC 金额" min="1" step="1" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
-    </div>
-    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="const a=document.getElementById('customSwapAmount').value;if(a>0){this.closest('.modal-overlay').remove();executeSwap('${fromToken}','${toToken}',String(Math.round(a*1e6)))}else{showToast('请输入金额','error')}">
-      确认买入
-    </button>
-  </div>`;
-  document.body.appendChild(modal);
 }
 
 // Send free-form question
