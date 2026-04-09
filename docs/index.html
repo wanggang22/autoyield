@@ -451,10 +451,14 @@ async function runStrategy(strategyId, customRule) {
     const emptyEl = document.getElementById('chatEmpty');
     if (emptyEl) emptyEl.style.display = 'none';
     const chatDiv = document.getElementById('chatPanel-' + strategyId);
+    const userBody = strategyId === 'custom' && customRule
+      ? `<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">执行自定义策略</div><div style="white-space:pre-wrap">${customRule.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+      : `执行${names[strategyId] || '策略'}分析`;
     chatDiv.innerHTML += `
-      <div class="chat-msg chat-msg-user">
+      <div class="chat-msg chat-msg-user" id="strategyUserMsg">
         <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
-        <div class="body">执行${names[strategyId] || '策略'}分析</div>
+        <div class="body">${userBody}</div>
+        <div class="meta" id="strategyUserMeta"><span style="color:var(--muted)">等待签名...</span></div>
       </div>
       <div class="chat-msg chat-msg-agent" id="strategyLoading">
         <div class="label agent-label">AutoYield AI</div>
@@ -480,7 +484,7 @@ async function runStrategy(strategyId, customRule) {
     const loadEl = document.getElementById('strategyLoading'); if (loadEl) loadEl.remove();
     if (res.status !== 200) { showToast('失败: ' + (data.error || res.status), 'error'); return; }
 
-    showStrategyResult(strategyId, data);
+    showStrategyResult(strategyId, data, customRule);
   } catch (err) {
     const loadEl = document.getElementById('strategyLoading'); if (loadEl) loadEl.remove();
     if (err.code === 4001) { showToast('签名已取消', 'error'); }
@@ -616,7 +620,7 @@ function getActionButtons(strategyId) {
   return `<div id="dynamicBuyButtons" style="width:100%"></div>`;
 }
 
-function showStrategyResult(strategyId, data) {
+function showStrategyResult(strategyId, data, customRule) {
   const toolsUsed = data.toolsUsed || [];
   const toolsHtml = toolsUsed.map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
   const resultText = data.result || JSON.stringify(data, null, 2);
@@ -634,13 +638,21 @@ function showStrategyResult(strategyId, data) {
   const chatDiv = document.getElementById('chatPanel-' + strategyId);
   if (!chatDiv) return;
 
-  // User message
-  chatDiv.innerHTML += `
-    <div class="chat-msg chat-msg-user">
-      <div class="label user-label">你 · ${time}</div>
-      <div class="body">执行${names[strategyId] || '策略'}分析</div>
-      <div class="meta"><span style="color:var(--green)">x402 $0.05 已支付</span>${txHash ? ' <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a>' : ''}</div>
-    </div>`;
+  // Update the existing user message's meta (created by runStrategy)
+  const userMeta = document.getElementById('strategyUserMeta');
+  if (userMeta) {
+    userMeta.innerHTML = `<span style="color:var(--green)">x402 $0.05 已支付</span>${txHash ? ' <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a>' : ''}`;
+    userMeta.id = '';  // so the next strategy run creates a fresh one
+    document.getElementById('strategyUserMsg')?.setAttribute('id', '');
+  } else {
+    // Fallback: user message didn't exist yet (e.g. restored from history), add one
+    chatDiv.innerHTML += `
+      <div class="chat-msg chat-msg-user">
+        <div class="label user-label">你 · ${time}</div>
+        <div class="body">执行${names[strategyId] || '策略'}分析</div>
+        <div class="meta"><span style="color:var(--green)">x402 $0.05 已支付</span>${txHash ? ' <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a>' : ''}</div>
+      </div>`;
+  }
 
   // Agent response
   chatDiv.innerHTML += `
@@ -717,7 +729,7 @@ function showStrategyResult(strategyId, data) {
   }
 
   // Save to history
-  saveToHistory(strategyId, data);
+  saveToHistory(strategyId, data, customRule);
 
   // Start 24/7 monitoring
   if (strategyId !== 'custom') startMonitor(strategyId);
@@ -728,11 +740,12 @@ function showStrategyResult(strategyId, data) {
 
 // ── Dashboard: History + Positions ──
 
-function saveToHistory(strategyId, data) {
+function saveToHistory(strategyId, data, customRule) {
   const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
   const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
   history.unshift({
     strategy: names[strategyId] || strategyId,
+    rule: customRule || '',
     toolsUsed: data.toolsUsed || [],
     result: data.result || data.answer || '',
     txHash: data.payment?.transaction || null,
@@ -1117,7 +1130,7 @@ async function sendChat() {
       </div>`;
     body.scrollTop = body.scrollHeight;
 
-    // Save
+    // Save (follow-up chat, no rule — just save the result)
     saveToHistory(activeTab === 'smart-copy' ? '聪明钱跟单' : activeTab === 'custom' ? '自定义策略' : '稳健理财', { ...data, result: resultText });
   } catch (err) {
     const loadEl = document.getElementById('chatLoading'); if (loadEl) loadEl.remove();
@@ -1239,10 +1252,13 @@ function restoreHistory() {
     for (const h of items) {
       const time = new Date(h.timestamp).toLocaleTimeString();
       const toolsHtml = (h.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
+      const userBody = (tabId === 'custom' && h.rule)
+        ? `<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">执行自定义策略</div><div style="white-space:pre-wrap">${h.rule.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+        : `执行${h.strategy}分析`;
       panel.innerHTML += `
         <div class="chat-msg chat-msg-user">
           <div class="label user-label">你 · ${time}</div>
-          <div class="body">执行${h.strategy}分析</div>
+          <div class="body">${userBody}</div>
           ${h.txHash ? '<div class="meta"><a href="https://www.okx.com/web3/explorer/xlayer/tx/' + h.txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a></div>' : ''}
         </div>
         <div class="chat-msg chat-msg-agent">
