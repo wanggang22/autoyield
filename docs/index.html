@@ -114,7 +114,8 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   <div class="container">
     <div class="logo">AutoYield <span>AI DeFi Agent</span></div>
     <div class="nav-right">
-      <span class="btn btn-sm btn-outline" style="color:var(--green);border-color:var(--green)">X Layer Mainnet</span>
+      <button class="btn btn-sm btn-outline" onclick="toggleDashboard()" id="dashBtn" style="display:none">仪表盘</button>
+      <span class="btn btn-sm btn-outline" style="color:var(--green);border-color:var(--green)">X Layer</span>
       <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">连接钱包</button>
     </div>
   </div>
@@ -228,6 +229,31 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   </div>
 </section>
 
+<!-- Dashboard -->
+<section class="strategies" id="dashboard" style="display:none">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h2 style="font-size:1.5rem;margin:0">我的仪表盘</h2>
+      <button class="btn btn-sm btn-outline" onclick="showDashboard()">刷新</button>
+    </div>
+
+    <!-- Position Monitor -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px">
+      <h3 style="font-size:1rem;margin-bottom:12px;color:var(--accent)">DeFi 仓位监控</h3>
+      <div id="positionsPanel" style="color:var(--text2);font-size:.85rem">连接钱包后显示你在 X Layer 上的 DeFi 仓位...</div>
+    </div>
+
+    <!-- History -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:1rem;color:var(--accent)">策略历史记录</h3>
+        <button class="btn btn-sm btn-outline" onclick="clearHistory()" style="font-size:.7rem">清空</button>
+      </div>
+      <div id="historyPanel"></div>
+    </div>
+  </div>
+</section>
+
 <section style="padding:40px 0;border-top:1px solid var(--border)">
   <div class="container">
     <h2 style="text-align:center;font-size:1.3rem;margin-bottom:24px">Agent 链上身份</h2>
@@ -307,6 +333,7 @@ async function connectWallet() {
     document.getElementById('connectBtn').textContent = userAccount.slice(0,6) + '...' + userAccount.slice(-4);
     document.getElementById('connectBtn').title = walletName + ' · ' + userAccount;
     showToast(walletName + ' Wallet 已连接', 'success');
+    document.getElementById('dashBtn').style.display = 'inline-flex';
 
     // Switch to X Layer
     try {
@@ -475,6 +502,116 @@ function showStrategyResult(strategyId, data) {
   </div>`;
   document.body.appendChild(modal);
   showToast('分析完成!', 'success');
+
+  // Save to history
+  saveToHistory(strategyId, data);
+  renderHistory();
+}
+
+// ── Dashboard: History + Positions ──
+
+function saveToHistory(strategyId, data) {
+  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
+  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
+  history.unshift({
+    strategy: names[strategyId] || strategyId,
+    toolsUsed: data.toolsUsed || [],
+    result: (data.result || '').slice(0, 500),
+    txHash: data.payment?.transaction || null,
+    timestamp: new Date().toISOString(),
+  });
+  localStorage.setItem('autoyield_history', JSON.stringify(history.slice(0, 20)));
+}
+
+function renderHistory() {
+  const panel = document.getElementById('historyPanel');
+  if (!panel) return;
+  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
+  if (!history.length) { panel.innerHTML = '<p style="color:var(--muted);font-size:.85rem">还没有执行过策略。选一个策略开始吧!</p>'; return; }
+
+  panel.innerHTML = history.map((h, i) => `
+    <div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="expandHistory(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-weight:600;font-size:.85rem">${h.strategy}</span>
+          <span style="color:var(--muted);font-size:.75rem;margin-left:8px">${new Date(h.timestamp).toLocaleString()}</span>
+        </div>
+        <div style="display:flex;gap:4px">
+          ${h.toolsUsed.slice(0, 3).map(t => '<span class="skill-tag">' + t + '</span>').join('')}
+          ${h.toolsUsed.length > 3 ? '<span class="skill-tag">+' + (h.toolsUsed.length - 3) + '</span>' : ''}
+        </div>
+      </div>
+      <div id="historyDetail${i}" style="display:none;margin-top:8px;font-size:.8rem;color:var(--text2);line-height:1.6;max-height:200px;overflow-y:auto">
+        ${renderMarkdown(h.result)}
+        ${h.txHash ? '<div style="margin-top:8px"><a href="https://www.okx.com/web3/explorer/xlayer/tx/' + h.txHash + '" target="_blank" style="color:var(--cyan);font-size:.75rem">查看链上交易</a></div>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function expandHistory(i) {
+  const el = document.getElementById('historyDetail' + i);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function clearHistory() {
+  localStorage.removeItem('autoyield_history');
+  renderHistory();
+  showToast('历史已清空', 'success');
+}
+
+async function loadPositions() {
+  const panel = document.getElementById('positionsPanel');
+  if (!panel || !userAccount) { if (panel) panel.innerHTML = '<p style="color:var(--muted)">请先连接钱包</p>'; return; }
+  panel.innerHTML = '<p style="color:var(--text2)">加载中...</p>';
+
+  try {
+    const res = await fetch(AGENT_URL + '/api/strategy/status?address=' + userAccount);
+    const data = await res.json();
+
+    const portfolio = data.portfolio;
+    const positions = data.defiPositions;
+
+    let html = '';
+
+    if (portfolio?.data?.[0]) {
+      const total = portfolio.data[0].totalValue || '0';
+      html += '<div style="font-size:1.3rem;font-weight:700;color:var(--green);margin-bottom:12px">总资产: $' + Number(total).toFixed(2) + '</div>';
+    }
+
+    if (positions && positions.length > 0) {
+      html += '<div style="display:grid;gap:8px">';
+      for (const pos of positions.slice(0, 5)) {
+        html += '<div style="padding:10px;background:var(--bg);border-radius:8px;display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><span style="font-weight:600;font-size:.85rem">' + (pos.platformName || 'DeFi') + '</span>';
+        html += '<span style="color:var(--muted);font-size:.75rem;margin-left:8px">' + (pos.chainName || 'X Layer') + '</span></div>';
+        html += '<div style="text-align:right"><div style="color:var(--green);font-weight:600">$' + Number(pos.totalValueUsd || 0).toFixed(2) + '</div></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '<button class="btn btn-sm btn-primary" style="margin-top:12px;width:100%" onclick="runStrategy(\'steady-yield\')">AI 一键调仓分析 · $0.05</button>';
+    } else {
+      html += '<p style="color:var(--muted)">暂无 DeFi 仓位。运行策略后，AI 会推荐最优方案。</p>';
+      html += '<button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="document.getElementById(\'strategies\').scrollIntoView({behavior:\'smooth\'})">选择策略开始</button>';
+    }
+
+    panel.innerHTML = html;
+  } catch (err) {
+    panel.innerHTML = '<p style="color:var(--muted)">加载失败: ' + err.message + '</p>';
+  }
+}
+
+function toggleDashboard() {
+  const dash = document.getElementById('dashboard');
+  const isHidden = dash.style.display === 'none';
+  dash.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) showDashboard();
+  dash.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showDashboard() {
+  renderHistory();
+  loadPositions();
 }
 
 // Init
