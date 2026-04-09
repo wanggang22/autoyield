@@ -535,6 +535,9 @@ function renderMarkdown(text) {
     return token;
   });
 
+  // Hide [BUY:TOKEN:ADDRESS] tags (parsed separately for buttons)
+  result = result.replace(/\[BUY:[^\]]+\]/g, '');
+
   // Markdown formatting
   result = result
     .replace(/## (.+)/g, '<div style="font-size:1rem;font-weight:700;color:var(--accent);margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">$1</div>')
@@ -583,18 +586,7 @@ function getActionButtons(strategyId) {
   }
 
   if (strategyId === 'smart-copy') {
-    const uid = 'swap' + Date.now();
-    return `
-      <div style="width:100%">
-        <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">一键买入 OKB（USDC → OKB）</div>
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
-          <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem" oninput="document.querySelectorAll('.swap-amt-btn[data-uid=${uid}]').forEach(b=>{b.style.borderColor='';b.style.color='var(--text)'})">
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC}','${OKB}')">执行买入</button>
-        </div>
-      </div>
+    return `<div id="dynamicBuyButtons" style="width:100%"></div>
       <div style="width:100%;display:flex;gap:4px;margin-top:4px">
         <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Uniswap</a>
         <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 OKX DEX</a>
@@ -649,6 +641,46 @@ function showStrategyResult(strategyId, data) {
   body.scrollTop = body.scrollHeight;
 
   showToast('分析完成!', 'success');
+
+  // Parse [BUY:TOKEN:ADDRESS] tags and generate buy buttons
+  if (strategyId === 'smart-copy') {
+    const buyMatches = resultText.matchAll(/\[BUY:([^:]+):([^\]]+)\]/g);
+    const buyPanel = chatDiv.querySelector('#dynamicBuyButtons') || document.querySelectorAll('#dynamicBuyButtons');
+    const lastPanel = buyPanel[buyPanel.length - 1] || buyPanel;
+    if (lastPanel) {
+      let buyHtml = '';
+      for (const m of buyMatches) {
+        const token = m[1];
+        const address = m[2];
+        const uid = 'swap' + Date.now() + Math.random().toString(36).slice(2, 5);
+        buyHtml += `
+          <div style="margin-bottom:8px">
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 ${token}（USDC → ${token}）</div>
+            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
+              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
+              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
+              <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem" oninput="document.querySelectorAll('.swap-amt-btn[data-uid=${uid}]').forEach(b=>{b.style.borderColor='';b.style.color='var(--text)'})">
+              <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC_ADDRESS}','${address}')">买入 ${token}</button>
+            </div>
+          </div>`;
+      }
+      if (!buyHtml) {
+        // Fallback: default OKB buy buttons
+        const uid = 'swap' + Date.now();
+        buyHtml = `
+          <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 OKB（USDC → OKB）</div>
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
+            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
+            <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
+            <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC_ADDRESS}','0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')">买入 OKB</button>
+          </div>`;
+      }
+      if (lastPanel.innerHTML !== undefined) lastPanel.innerHTML = buyHtml;
+    }
+  }
 
   // Save to history
   saveToHistory(strategyId, data);

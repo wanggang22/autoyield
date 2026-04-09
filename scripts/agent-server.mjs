@@ -1792,10 +1792,12 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 ## 跟单建议
 值不值得跟？建议买入价、止损价（-5%）、止盈价。用哪个引擎（OKX or Uniswap）更划算。
 
-## 一键执行链接
-给出直接交易链接（必须提供）：
-- Uniswap Swap: https://app.uniswap.org/swap?chain=xlayer
-- OKX DEX: https://web3.okx.com/dex-swap#inputChain=196`,
+## 推荐买入代币
+对每个推荐的代币，必须按以下格式输出（前端会解析生成一键买入按钮）：
+[BUY:代币符号:代币合约地址]
+
+例如：[BUY:OKB:0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]
+如果有多个推荐，每个一行。只推荐安全扫描通过的代币。`,
 
     'custom': `你是 AutoYield AI 策略顾问。直接执行用户的规则并给出结果，不要反问。
 
