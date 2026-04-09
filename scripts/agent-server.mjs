@@ -1776,6 +1776,59 @@ app.get('/api/execute/swap', async (req, res) => {
   }
 });
 
+// GET /api/execute/defi — Get DeFi deposit calldata for one-click execution
+app.get('/api/execute/defi', async (req, res) => {
+  const { wallet, token, amount, investmentId } = req.query;
+  if (!wallet || !amount) return res.status(400).json({ error: 'wallet and amount required' });
+  log(`/api/execute/defi: wallet=${wallet}, token=${token || 'USDC'}, amount=${amount}`);
+
+  try {
+    // If no investmentId, search for best product first
+    let targetId = investmentId;
+    if (!targetId) {
+      const products = await defiSearch('196', token || 'USDC', 'SINGLE_EARN');
+      if (products?.length) {
+        targetId = products[0].investmentId;
+        log(`  Best product: ${products[0].platformName} APY ${products[0].apy}%, id=${targetId}`);
+      }
+    }
+
+    if (!targetId) {
+      return res.json({ success: false, error: 'No DeFi product found on X Layer', fallbackUrl: 'https://app.aave.com/?marketName=proto_xlayer_v3' });
+    }
+
+    // Get deposit calldata
+    const result = await defiInvest(targetId, wallet, token || 'USDC', amount, '196');
+
+    if (result?.length && result[0]?.txInfo) {
+      const tx = result[0].txInfo;
+      res.json({
+        success: true,
+        tx: {
+          to: tx.to,
+          data: tx.data,
+          value: tx.value || '0x0',
+        },
+        product: {
+          investmentId: targetId,
+          token: token || 'USDC',
+          amount,
+        },
+      });
+    } else {
+      // Fallback to Aave link
+      res.json({
+        success: false,
+        error: 'Could not build deposit transaction',
+        fallbackUrl: 'https://app.aave.com/?marketName=proto_xlayer_v3',
+        raw: result,
+      });
+    }
+  } catch (err) {
+    res.json({ success: false, error: err.message, fallbackUrl: 'https://app.aave.com/?marketName=proto_xlayer_v3' });
+  }
+});
+
 // GET /api/execute/lp — Get LP deep link with AI-recommended params
 app.get('/api/execute/lp', async (req, res) => {
   const { tokenA, tokenB, fee, minPrice, maxPrice, amount } = req.query;

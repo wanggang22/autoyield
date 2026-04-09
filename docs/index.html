@@ -583,9 +583,19 @@ function getActionButtons(strategyId) {
   const OKB = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
   if (strategyId === 'steady-yield') {
-    const uid = 'lp' + Date.now();
+    const uidAave = 'aave' + Date.now();
+    const uidLp = 'lp' + Date.now();
     return `
-      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Aave 存入</a>
+      <div style="width:100%">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键存入 Aave（USDC）</div>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','10')">$10</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','50')">$50</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','100')">$100</button>
+          <input id="input-${uidAave}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeDefi('${uidAave}')">存入 Aave</button>
+        </div>
+      </div>
       <div style="width:100%;margin-top:8px">
         <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键添加 Uniswap LP（OKB/USDC，0.3% 费率）</div>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
@@ -849,6 +859,51 @@ function executeSwapFromInput(uid, fromToken, toToken) {
   const amount = parseFloat(input?.value || '0');
   if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
   executeSwap(fromToken, toToken, String(Math.round(amount * 1e6)));
+}
+
+// One-click Aave deposit
+async function executeDefi(uid) {
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+  const input = document.getElementById('input-' + uid);
+  const amountUsd = parseFloat(input?.value || '0');
+  if (!amountUsd || amountUsd <= 0) { showToast('请选择或输入金额', 'error'); return; }
+
+  const provider = window._provider || getProvider();
+  const amountRaw = String(Math.round(amountUsd * 1e6)); // USDC 6 decimals
+
+  showToast('获取 Aave 存入交易...', 'success');
+
+  try {
+    const res = await fetch(AGENT_URL + '/api/execute/defi?wallet=' + userAccount + '&token=USDC&amount=' + amountRaw);
+    const data = await res.json();
+
+    if (data.success && data.tx) {
+      showToast('确认存入 $' + amountUsd + ' USDC 到 Aave...', 'success');
+      const txHash = await provider.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: userAccount, to: data.tx.to, data: data.tx.data, value: data.tx.value || '0x0' }],
+      });
+      showToast('存入成功! TX: ' + txHash.slice(0, 10) + '...', 'success');
+
+      const chatDiv = document.getElementById('chatPanel-' + activeTab);
+      if (chatDiv) {
+        chatDiv.innerHTML += `
+          <div class="chat-msg chat-msg-user">
+            <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
+            <div class="body">存入 $${amountUsd} USDC 到 Aave</div>
+            <div class="meta"><a href="https://www.okx.com/web3/explorer/xlayer/tx/${txHash}" target="_blank" style="color:var(--cyan);text-decoration:none">查看交易</a></div>
+          </div>`;
+        document.getElementById('sidebarBody').scrollTop = document.getElementById('sidebarBody').scrollHeight;
+      }
+    } else {
+      // Fallback: open Aave
+      showToast('通过 Aave 网站存入...', 'success');
+      window.open(data.fallbackUrl || 'https://app.aave.com/?marketName=proto_xlayer_v3', '_blank');
+    }
+  } catch (err) {
+    if (err.code === 4001) { showToast('交易已取消', 'error'); }
+    else { showToast('失败: ' + err.message, 'error'); }
+  }
 }
 
 // One-click LP execution
