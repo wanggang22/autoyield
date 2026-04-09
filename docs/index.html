@@ -670,24 +670,40 @@ function showStrategyResult(strategyId, data) {
 
   // Parse [BUY:TOKEN:ADDRESS] tags and generate buy buttons
   if (strategyId === 'smart-copy' || strategyId === 'custom') {
-    const buyMatches = resultText.matchAll(/\[BUY:([^:]+):([^\]]+)\]/g);
+    const buyMatches = resultText.matchAll(/\[BUY:([^:]+):([^:\]]+)(?::(\d+))?\]/g);
     const buyPanel = chatDiv.querySelector('#dynamicBuyButtons') || document.querySelectorAll('#dynamicBuyButtons');
     const lastPanel = buyPanel[buyPanel.length - 1] || buyPanel;
     if (lastPanel) {
       let buyHtml = '';
+      const CHAIN_INFO = {
+        '1': { name: 'Ethereum', usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', solana: false },
+        '56': { name: 'BSC', usdc: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', solana: false },
+        '137': { name: 'Polygon', usdc: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', solana: false },
+        '196': { name: 'X Layer', usdc: '0x74b7F16337b8972027F6196A17a631aC6dE26d22', solana: false },
+        '8453': { name: 'Base', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', solana: false },
+        '501': { name: 'Solana', usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', solana: true },
+      };
       for (const m of buyMatches) {
         const token = m[1];
         const address = m[2];
+        const chainId = m[3] || '196';
+        const chainInfo = CHAIN_INFO[chainId] || CHAIN_INFO['196'];
+        const usdcOnChain = chainInfo.usdc;
         const uid = 'swap' + Date.now() + Math.random().toString(36).slice(2, 5);
+        const isSolana = chainInfo.solana;
+        const chainBadge = `<span style="font-size:.65rem;padding:1px 6px;background:rgba(139,92,246,.15);color:var(--accent);border-radius:4px;margin-left:4px">${chainInfo.name}</span>`;
+        const buyAction = isSolana
+          ? `<button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="alert('Solana 代币需要使用 OKX Wallet Solana 模式手动交易。点击复制地址：${address}');navigator.clipboard.writeText('${address}')">复制地址</button>`
+          : `<button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInputMultiChain('${uid}','${usdcOnChain}','${address}','${chainId}')">买入 ${token}</button>`;
         buyHtml += `
           <div style="margin-bottom:8px">
-            <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 ${token}（USDC → ${token}）</div>
+            <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 ${token} ${chainBadge}（USDC → ${token}）</div>
             <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
               <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
               <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
               <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem" oninput="document.querySelectorAll('.swap-amt-btn[data-uid=${uid}]').forEach(b=>{b.style.borderColor='';b.style.color='var(--text)'})">
-              <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC_ADDRESS}','${address}')">买入 ${token}</button>
+              ${buyAction}
             </div>
           </div>`;
       }
@@ -862,6 +878,69 @@ function executeSwapFromInput(uid, fromToken, toToken) {
   const amount = parseFloat(input?.value || '0');
   if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
   executeSwap(fromToken, toToken, String(Math.round(amount * 1e6)));
+}
+
+async function executeSwapFromInputMultiChain(uid, fromToken, toToken, chainId) {
+  const input = document.getElementById('input-' + uid);
+  const amount = parseFloat(input?.value || '0');
+  if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+
+  const provider = window._provider || getProvider();
+
+  // Switch to target chain
+  const chainHex = '0x' + parseInt(chainId).toString(16);
+  try {
+    showToast('切换到 chain ' + chainId + '...', 'success');
+    await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: chainHex }] });
+  } catch (switchErr) {
+    if (switchErr.code === 4902) {
+      // Chain not added — try to add common chains
+      const chainConfigs = {
+        '1': { chainId: '0x1', chainName: 'Ethereum', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://eth.llamarpc.com'], blockExplorerUrls: ['https://etherscan.io'] },
+        '56': { chainId: '0x38', chainName: 'BSC', nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }, rpcUrls: ['https://bsc-dataseed.binance.org'], blockExplorerUrls: ['https://bscscan.com'] },
+        '137': { chainId: '0x89', chainName: 'Polygon', nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }, rpcUrls: ['https://polygon-rpc.com'], blockExplorerUrls: ['https://polygonscan.com'] },
+        '8453': { chainId: '0x2105', chainName: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: ['https://basescan.org'] },
+      };
+      const cfg = chainConfigs[chainId];
+      if (cfg) {
+        try { await provider.request({ method: 'wallet_addEthereumChain', params: [cfg] }); }
+        catch (addErr) { showToast('添加链失败: ' + addErr.message, 'error'); return; }
+      }
+    } else {
+      showToast('切链失败: ' + switchErr.message, 'error'); return;
+    }
+  }
+
+  // Get swap calldata for the target chain
+  showToast('获取交易路径...', 'success');
+  const amountRaw = String(Math.round(amount * 1e6));
+  try {
+    const res = await fetch(AGENT_URL + '/api/execute/swap?from=' + fromToken + '&to=' + toToken + '&amount=' + amountRaw + '&wallet=' + userAccount + '&chain=' + chainId);
+    const data = await res.json();
+    if (!data.success) { showToast('交易路径获取失败: ' + (data.error || ''), 'error'); return; }
+
+    showToast('确认交易 $' + amount + '...', 'success');
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: userAccount, to: data.tx.to, data: data.tx.data, value: data.tx.value || '0x0' }],
+    });
+    showToast('交易已提交! TX: ' + txHash.slice(0, 10) + '...', 'success');
+
+    const chatDiv = document.getElementById('chatPanel-' + activeTab);
+    if (chatDiv) {
+      chatDiv.innerHTML += `
+        <div class="chat-msg chat-msg-user">
+          <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
+          <div class="body">买入 $${amount} (chain ${chainId})</div>
+          <div class="meta">TX: ${txHash.slice(0, 18)}...</div>
+        </div>`;
+      document.getElementById('sidebarBody').scrollTop = document.getElementById('sidebarBody').scrollHeight;
+    }
+  } catch (err) {
+    if (err.code === 4001) { showToast('交易已取消', 'error'); }
+    else { showToast('交易失败: ' + err.message, 'error'); }
+  }
 }
 
 // One-click Aave deposit

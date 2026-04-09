@@ -1748,14 +1748,15 @@ app.get('/api/monitor/alerts', (req, res) => {
 
 // GET /api/execute/swap — Get swap calldata for one-click execution
 app.get('/api/execute/swap', async (req, res) => {
-  const { from, to, amount, wallet } = req.query;
+  const { from, to, amount, wallet, chain } = req.query;
   if (!from || !to || !amount || !wallet) return res.status(400).json({ error: 'from, to, amount, wallet required' });
-  log(`/api/execute/swap: ${from} → ${to}, amount=${amount}, wallet=${wallet}`);
+  const chainIndex = chain || '196';
+  log(`/api/execute/swap: chain=${chainIndex}, ${from} → ${to}, amount=${amount}, wallet=${wallet}`);
 
   try {
     // Get swap calldata from OKX aggregator
     const result = await okxRequest('GET',
-      `/api/v6/dex/aggregator/swap?chainIndex=196&fromTokenAddress=${from}&toTokenAddress=${to}&amount=${amount}&userWalletAddress=${wallet}&slippagePercent=1`
+      `/api/v6/dex/aggregator/swap?chainIndex=${chainIndex}&fromTokenAddress=${from}&toTokenAddress=${to}&amount=${amount}&userWalletAddress=${wallet}&slippagePercent=1`
     );
 
     if (result?.code === '0' && result?.data?.[0]?.tx) {
@@ -2012,13 +2013,22 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 - 给出可执行的建议（具体代币、金额、操作步骤）
 
 如果推荐了具体的代币，必须在末尾按以下格式列出（前端会解析生成一键买入按钮）：
-[BUY:代币符号:代币合约地址]
+[BUY:代币符号:代币合约地址:链ID]
+
+链ID参考：
+- 1 = Ethereum
+- 56 = BSC
+- 137 = Polygon
+- 196 = X Layer
+- 8453 = Base
+- 501 = Solana
 
 例如：
-[BUY:LIONESS:8xKp...pump]
-[BUY:GIGGLES:9xJk...pump]
+[BUY:LIONESS:8xKp1234abcdef...pump:501]
+[BUY:CAT:0xabc123...:8453]
+[BUY:DOGE:0xdef456...:56]
 
-每个推荐的代币一行。
+每个推荐的代币一行，必须包含完整的合约地址和链ID。
 
 用户规则：${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
 
