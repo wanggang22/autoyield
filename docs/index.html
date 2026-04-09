@@ -578,8 +578,8 @@ function getActionButtons(strategyId) {
 
   if (strategyId === 'steady-yield') {
     return `
-      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Aave</a>
-      <a href="https://app.uniswap.org/positions/create?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap LP</a>`;
+      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Aave 存入</a>
+      <a href="https://app.uniswap.org/positions/create?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Uniswap 添加 LP</a>`;
   }
 
   if (strategyId === 'smart-copy') {
@@ -593,13 +593,13 @@ function getActionButtons(strategyId) {
           <button class="btn btn-sm btn-outline" style="font-size:.7rem" onclick="showCustomSwap('${USDC}','${OKB}')">自定义</button>
         </div>
       </div>
-      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
-      <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 OKX DEX</a>`;
+      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;background:linear-gradient(135deg,#3b82f6,#6366f1)">去 Uniswap</a>
+      <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;background:linear-gradient(135deg,#3b82f6,#6366f1)">去 OKX DEX</a>`;
   }
 
   return `
-    <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
-    <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Aave</a>`;
+    <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
+    <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Aave</a>`;
 }
 
 function showStrategyResult(strategyId, data) {
