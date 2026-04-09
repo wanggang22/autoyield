@@ -108,7 +108,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Sidebar */
-.sidebar{position:fixed;top:0;right:-440px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:150;transition:right .3s ease;display:flex;flex-direction:column}
+.sidebar{position:fixed;top:0;right:-660px;width:640px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:150;transition:right .3s ease;display:flex;flex-direction:column}
 .sidebar.open{right:0}
 .sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .sidebar-header h3{font-size:1rem;margin:0}
@@ -126,6 +126,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:140;display:none}
 .sidebar-overlay.open{display:block}
 @media(max-width:768px){.sidebar{width:100%;right:-100%}}
+@media(min-width:769px) and (max-width:1100px){.sidebar{width:50vw;right:-52vw}}
 </style>
 </head>
 <body>
@@ -574,7 +575,7 @@ function togglePin() {
     btn.style.color = 'var(--accent)';
     overlay.classList.remove('open');
     // 缩窄主内容给侧边栏让位
-    document.body.style.marginRight = '420px';
+    document.body.style.marginRight = '640px';
   } else {
     btn.innerHTML = '&#128204; 固定';
     btn.style.borderColor = '';
