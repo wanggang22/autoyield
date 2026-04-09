@@ -1137,7 +1137,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
     log(`  Dynamic prompt: ~${Math.round(askPrompt.length / 4)} tokens`);
   } catch { askPrompt = SKILL_SYSTEM_PROMPT; }
 
-  const MAX_ROUNDS = 6;
+  const MAX_ROUNDS = 10;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: question }];
@@ -1282,7 +1282,7 @@ Available strategies:
 
 Execute the FULL strategy, not just the first step. Use multiple tool rounds.`;
 
-  const MAX_ROUNDS = 6;
+  const MAX_ROUNDS = 10;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: `Execute this strategy: ${goal}` }];
@@ -2029,7 +2029,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
     strategySkillPrompt = SKILL_SYSTEM_PROMPT;
   }
 
-  const MAX_ROUNDS = 6;
+  const MAX_ROUNDS = 10;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: prompt }];
