@@ -161,7 +161,8 @@ export function detectSkillsForQuestion(question) {
   }
   // Signal / whale / smart money
   if (/信号|聪明钱|鲸鱼|跟单|whale|signal|smart.?money|kol/.test(q)) {
-    okx.add('okx-dex-signal'); okx.add('okx-dex-token');
+    okx.add('okx-dex-signal'); okx.add('okx-dex-token'); okx.add('okx-dex-swap');
+    uni.add('swap-integration');
   }
   // Swap / trade / buy / sell
   if (/swap|交换|买入|卖出|兑换|trade|buy|sell/.test(q)) {
@@ -173,7 +174,8 @@ export function detectSkillsForQuestion(question) {
   }
   // Meme
   if (/meme|打狗|pump|新盘|rug/.test(q)) {
-    okx.add('okx-dex-trenches'); okx.add('okx-dex-token');
+    okx.add('okx-dex-trenches'); okx.add('okx-dex-token'); okx.add('okx-dex-swap');
+    uni.add('swap-integration');
   }
   // Portfolio / balance
   if (/余额|资产|portfolio|balance|钱包|持仓/.test(q)) {
