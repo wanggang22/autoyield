@@ -2012,9 +2012,11 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
   const prompt = strategyPrompts[strategyId] || strategyPrompts['steady-yield'];
 
   // Load strategy-specific Skill prompt (full content, fewer skills)
+  // Custom strategy: detect from user's rule text, same as /api/ask
   let strategySkillPrompt;
   try {
-    strategySkillPrompt = buildSkillPrompt(strategyId);
+    const question = strategyId === 'custom' ? (req.body?.rule || '') : null;
+    strategySkillPrompt = buildSkillPrompt(strategyId === 'custom' ? null : strategyId, question);
     log(`  Strategy prompt: ~${Math.round(strategySkillPrompt.length / 4)} tokens for ${strategyId}`);
   } catch (err) {
     strategySkillPrompt = SKILL_SYSTEM_PROMPT;
