@@ -412,10 +412,9 @@ function showStrategyResult(strategyId, data) {
   modal.onclick = function(e) { if(e.target===this) this.remove(); };
   modal.innerHTML = `<div class="modal" style="position:relative">
     <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-    <h2 style="margin-bottom:4px">${strategyId === 'steady-yield' ? '稳健理财' : '聪明钱跟单'} 执行结果</h2>
+    <h2 style="margin-bottom:4px">${strategyId === 'steady-yield' ? '稳健理财' : strategyId === 'smart-copy' ? '聪明钱跟单' : '自定义策略'} 分析结果</h2>
     <p style="color:var(--green);font-size:.85rem;margin-bottom:12px">
-      AI Agent 通过 Agentic Wallet (TEE) 执行
-      ${txHash ? ' · <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan)">查看交易</a>' : ''}
+      x402 服务费 $0.05 已支付${txHash ? ' · <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan)">查看链上交易</a>' : ''}
     </p>
     <div style="margin-bottom:12px">${toolsHtml}</div>
     <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.7;max-height:400px;overflow-y:auto;white-space:pre-wrap;color:var(--text)">${resultText}</div>
