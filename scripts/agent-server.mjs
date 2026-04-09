@@ -1137,7 +1137,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
     log(`  Dynamic prompt: ~${Math.round(askPrompt.length / 4)} tokens`);
   } catch { askPrompt = SKILL_SYSTEM_PROMPT; }
 
-  const MAX_ROUNDS = 4;
+  const MAX_ROUNDS = 6;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: question }];
@@ -1282,7 +1282,7 @@ Available strategies:
 
 Execute the FULL strategy, not just the first step. Use multiple tool rounds.`;
 
-  const MAX_ROUNDS = 4;
+  const MAX_ROUNDS = 6;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: `Execute this strategy: ${goal}` }];
@@ -2004,6 +2004,12 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 
     'custom': `你是 AutoYield AI 策略顾问。直接执行用户的规则并给出结果，不要反问。
 
+重要规则：
+- 最多调 4 个工具就给出最终结果
+- 不要调用 agent_pay（除非明确需要付费给其他 Agent）
+- 拿到数据后必须用文字总结，给出可执行的建议
+- 用中文输出，结构化（标题、列表、表格）
+
 用户规则：${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
 
 根据规则选择合适的工具执行，直接给出分析结果和操作建议。`,
@@ -2022,7 +2028,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
     strategySkillPrompt = SKILL_SYSTEM_PROMPT;
   }
 
-  const MAX_ROUNDS = 4;
+  const MAX_ROUNDS = 6;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: prompt }];
@@ -2085,13 +2091,30 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
     }
   }
 
+  // If no final answer, ask Claude to summarize what it found
+  if (!finalAnswer && messages.length > 1) {
+    log(`  No final answer, asking for summary...`);
+    try {
+      messages.push({ role: 'user', content: '基于以上工具调用的所有数据，直接给出最终的中文分析结果和建议。不要再调用工具，只输出文字总结。' });
+      const summaryResp = await claude.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        system: strategySkillPrompt,
+        messages,
+      });
+      for (const block of summaryResp.content) {
+        if (block.type === 'text') finalAnswer += block.text;
+      }
+    } catch (err) { log(`  Summary failed: ${err.message}`); }
+  }
+
   const response = {
     product: 'AutoYield',
     strategy: strategyId,
     toolsUsed: [...new Set(allToolsUsed)],
     stepsExecuted: allToolsUsed.length,
     data: allToolData,
-    result: finalAnswer || '(Strategy completed)',
+    result: finalAnswer || '(策略已执行但 AI 未生成总结，请重试)',
     poweredBy: { skills: '13 OKX + 4 Uniswap Skills', engine: 'Claude AI (Skill-driven)' },
     timestamp: new Date().toISOString(),
   };
