@@ -129,6 +129,8 @@ const STRATEGY_SKILLS = {
     uniswap: [
       { plugin: 'uniswap-driver', skill: 'liquidity-planner' },
       { plugin: 'uniswap-trading', skill: 'swap-integration' },
+      { plugin: 'uniswap-driver', skill: 'swap-planner' },
+      { plugin: 'uniswap-trading', skill: 'pay-with-any-token' },
     ],
   },
   'smart-copy': {
@@ -136,6 +138,8 @@ const STRATEGY_SKILLS = {
     uniswap: [
       { plugin: 'uniswap-trading', skill: 'swap-integration' },
       { plugin: 'uniswap-driver', skill: 'liquidity-planner' },
+      { plugin: 'uniswap-driver', skill: 'swap-planner' },
+      { plugin: 'uniswap-trading', skill: 'pay-with-any-token' },
     ],
   },
   'custom': {
