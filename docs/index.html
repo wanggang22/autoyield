@@ -609,19 +609,11 @@ function getActionButtons(strategyId) {
   }
 
   if (strategyId === 'smart-copy') {
-    return `<div id="dynamicBuyButtons" style="width:100%"></div>
-      <div style="width:100%;display:flex;gap:4px;margin-top:4px">
-        <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Uniswap</a>
-        <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 OKX DEX</a>
-      </div>`;
+    return `<div id="dynamicBuyButtons" style="width:100%"></div>`;
   }
 
-  // Custom strategy - dynamic buy buttons + fallback links
-  return `<div id="dynamicBuyButtons" style="width:100%"></div>
-    <div style="width:100%;display:flex;gap:4px;margin-top:4px">
-      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Uniswap</a>
-      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.65rem;flex:1;text-align:center">或去 Aave</a>
-    </div>`;
+  // Custom strategy - dynamic buy buttons only
+  return `<div id="dynamicBuyButtons" style="width:100%"></div>`;
 }
 
 function showStrategyResult(strategyId, data) {
