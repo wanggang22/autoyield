@@ -1630,6 +1630,42 @@ app.get('/api/economic-loop', x402Guard('/api/economic-loop'), async (req, res) 
 
 // ── AutoYield Strategy Endpoints ─────────────────────────────────────────────
 
+// GET /api/execute/swap — Get swap calldata for one-click execution
+app.get('/api/execute/swap', async (req, res) => {
+  const { from, to, amount, wallet } = req.query;
+  if (!from || !to || !amount || !wallet) return res.status(400).json({ error: 'from, to, amount, wallet required' });
+  log(`/api/execute/swap: ${from} → ${to}, amount=${amount}, wallet=${wallet}`);
+
+  try {
+    // Get swap calldata from OKX aggregator
+    const result = await okxRequest('GET',
+      `/api/v6/dex/aggregator/swap?chainIndex=196&fromTokenAddress=${from}&toTokenAddress=${to}&amount=${amount}&userWalletAddress=${wallet}&slippage=0.01`
+    );
+
+    if (result?.code === '0' && result?.data?.[0]?.tx) {
+      const tx = result.data[0].tx;
+      res.json({
+        success: true,
+        tx: {
+          to: tx.to,
+          data: tx.data,
+          value: tx.value || '0x0',
+          gasLimit: tx.gas || '300000',
+        },
+        quote: {
+          fromAmount: result.data[0].fromTokenAmount,
+          toAmount: result.data[0].toTokenAmount,
+          priceImpact: result.data[0].priceImpactPercentage,
+        },
+      });
+    } else {
+      res.json({ success: false, error: 'No swap route found', raw: result });
+    }
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/strategies — List available strategies with live APY estimates
 app.get('/api/strategies', async (_req, res) => {
   log('/api/strategies: fetching live data');

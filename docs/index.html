@@ -573,22 +573,33 @@ function switchTab(tabId) {
 }
 
 function getActionButtons(strategyId) {
-  const actionLinks = {
-    'steady-yield': [
-      { label: '去 Aave 存入', url: 'https://app.aave.com/?marketName=proto_xlayer_v3' },
-      { label: '去 Uniswap 添加 LP', url: 'https://app.uniswap.org/positions/create?chain=xlayer' },
-    ],
-    'smart-copy': [
-      { label: '去 Uniswap 交易', url: 'https://app.uniswap.org/swap?chain=xlayer' },
-      { label: '去 OKX DEX 交易', url: 'https://web3.okx.com/dex-swap#inputChain=196' },
-    ],
-    'custom': [
-      { label: '去 Uniswap', url: 'https://app.uniswap.org/swap?chain=xlayer' },
-      { label: '去 Aave', url: 'https://app.aave.com/?marketName=proto_xlayer_v3' },
-    ],
-  };
-  const actions = actionLinks[strategyId] || actionLinks['custom'];
-  return actions.map(a => `<a href="${a.url}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">${a.label}</a>`).join(' ');
+  const USDC = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
+  const OKB = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+
+  if (strategyId === 'steady-yield') {
+    return `
+      <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Aave</a>
+      <a href="https://app.uniswap.org/positions/create?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap LP</a>`;
+  }
+
+  if (strategyId === 'smart-copy') {
+    return `
+      <div style="width:100%">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">一键买入 OKB（USDC → OKB）</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','10000000')">$10</button>
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','50000000')">$50</button>
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwap('${USDC}','${OKB}','100000000')">$100</button>
+          <button class="btn btn-sm btn-outline" style="font-size:.7rem" onclick="showCustomSwap('${USDC}','${OKB}')">自定义</button>
+        </div>
+      </div>
+      <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
+      <a href="https://web3.okx.com/dex-swap#inputChain=196" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 OKX DEX</a>`;
+  }
+
+  return `
+    <a href="https://app.uniswap.org/swap?chain=xlayer" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Uniswap</a>
+    <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none;font-size:.7rem">去 Aave</a>`;
 }
 
 function showStrategyResult(strategyId, data) {
@@ -764,6 +775,74 @@ function toggleDashboard() {
 function showDashboard() {
   renderHistory();
   loadPositions();
+}
+
+// One-click swap execution
+async function executeSwap(fromToken, toToken, amount) {
+  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
+  const provider = window._provider || getProvider();
+
+  showToast('获取最优交易路径...', 'success');
+
+  try {
+    // Get calldata from backend
+    const res = await fetch(AGENT_URL + '/api/execute/swap?from=' + fromToken + '&to=' + toToken + '&amount=' + amount + '&wallet=' + userAccount);
+    const data = await res.json();
+
+    if (!data.success) { showToast('交易路径获取失败: ' + (data.error || ''), 'error'); return; }
+
+    const amountUsd = (Number(amount) / 1e6).toFixed(0);
+    showToast('确认交易 $' + amountUsd + '...', 'success');
+
+    // User signs the transaction
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: userAccount,
+        to: data.tx.to,
+        data: data.tx.data,
+        value: data.tx.value,
+      }],
+    });
+
+    showToast('交易已提交! TX: ' + txHash.slice(0, 10) + '...', 'success');
+
+    // Add to chat
+    const chatDiv = document.getElementById('chatPanel-' + activeTab);
+    if (chatDiv) {
+      chatDiv.innerHTML += `
+        <div class="chat-msg chat-msg-user">
+          <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
+          <div class="body">一键买入 $${amountUsd}</div>
+          <div class="meta">
+            <a href="https://www.okx.com/web3/explorer/xlayer/tx/${txHash}" target="_blank" style="color:var(--cyan);text-decoration:none">查看交易 ${txHash.slice(0,10)}...</a>
+          </div>
+        </div>`;
+      const body = document.getElementById('sidebarBody');
+      body.scrollTop = body.scrollHeight;
+    }
+  } catch (err) {
+    if (err.code === 4001) { showToast('交易已取消', 'error'); }
+    else { showToast('交易失败: ' + err.message, 'error'); }
+  }
+}
+
+function showCustomSwap(fromToken, toToken) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.onclick = function(e) { if(e.target===this) this.remove(); };
+  modal.innerHTML = `<div class="modal" style="position:relative;max-width:360px">
+    <button style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+    <h2 style="font-size:1.1rem;margin-bottom:12px">自定义金额买入</h2>
+    <div style="margin-bottom:12px">
+      <label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:4px">USDC 金额</label>
+      <input id="customSwapAmount" type="number" placeholder="输入 USDC 金额" min="1" step="1" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="const a=document.getElementById('customSwapAmount').value;if(a>0){this.closest('.modal-overlay').remove();executeSwap('${fromToken}','${toToken}',String(Math.round(a*1e6)))}else{showToast('请输入金额','error')}">
+      确认买入
+    </button>
+  </div>`;
+  document.body.appendChild(modal);
 }
 
 // Send free-form question
