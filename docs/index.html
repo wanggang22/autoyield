@@ -123,9 +123,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 <section class="hero">
   <div class="container">
     <h1>AI 帮你在 X Layer 上<br><em>自动赚钱</em></h1>
-    <p>选一个策略，x402 签名付费（零 gas），AI Agent 分析全市场给你最优建议。<br>13 个 OKX Skills + 4 个 Uniswap Skills 驱动，你的资金始终在自己钱包里。</p>
+    <p>选一个策略，AI Agent 扫描全市场，给你最优 DeFi 建议。<br>17 个 OKX + Uniswap Skills 驱动，OKX vs Uniswap 双引擎永远拿最优价。</p>
     <button class="btn btn-primary" style="font-size:1rem;padding:14px 32px" onclick="document.getElementById('strategies').scrollIntoView({behavior:'smooth'})">选择策略</button>
-    <p style="color:var(--muted);font-size:.8rem;margin-top:12px">每次策略分析 $0.05 USDC · x402 零 gas 签名 · 资金不离开你的钱包</p>
+    <p style="color:var(--muted);font-size:.8rem;margin-top:12px">每次分析 $0.05 · x402 零 gas · 资金不离开你的钱包</p>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num" id="statApy">~8.5%</div><div class="label">预估 APY</div></div>
       <div class="hero-stat"><div class="num" id="statSkills">17</div><div class="label">AI Skills</div></div>
@@ -193,17 +193,17 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <div class="step">
         <div class="step-num">1</div>
         <h3>连接钱包</h3>
-        <p>连接 MetaMask 到 X Layer 网络，零 gas 费用。</p>
+        <p>连接 OKX Wallet 或 MetaMask，切换到 X Layer 网络。</p>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <h3>选择策略</h3>
-        <p>稳健理财、聪明钱跟单、或自定义规则。</p>
+        <h3>选策略，签名付费</h3>
+        <p>选一个策略，x402 签名 $0.05 USDC（零 gas），AI 开始分析。</p>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <h3>AI 自动赚钱</h3>
-        <p>AI Agent 24/7 监控市场，自动执行最优操作。</p>
+        <h3>收到 AI 建议</h3>
+        <p>AI 用 17 个 Skill 分析市场，给出最优 DeFi 方案和具体操作步骤。</p>
       </div>
     </div>
   </div>
@@ -224,6 +224,30 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </div>
     <div class="arch-note">
       <strong>架构:</strong> SKILL.md 文件教 Claude AI 如何做决策（安全规则、滑点策略、MEV 保护）。API 执行决策。双引擎对比 OKX vs Uniswap 永远拿最优价。
+    </div>
+  </div>
+</section>
+
+<section style="padding:40px 0;border-top:1px solid var(--border)">
+  <div class="container">
+    <h2 style="text-align:center;font-size:1.3rem;margin-bottom:24px">Agent 链上身份</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">Agentic Wallet (TEE)</div>
+        <code style="font-size:.7rem;color:var(--cyan);word-break:break-all">0x817c2756f2b3f0977532be533bdafbc9d32dd30f</code>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">x402 收款地址</div>
+        <code style="font-size:.7rem;color:var(--cyan);word-break:break-all">0x418E21F39411f513E29bFfCa1742868271Eb8a24</code>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">网络</div>
+        <span style="color:var(--green);font-size:.85rem;font-weight:600">X Layer Mainnet (Chain 196)</span>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:24px;padding:16px;background:rgba(139,92,246,.06);border-radius:var(--radius)">
+      <span style="font-size:.85rem;color:var(--accent);font-weight:600">Build X Hackathon 2026</span>
+      <span style="color:var(--muted);font-size:.8rem"> · Powered by OKX Onchain OS + Uniswap AI</span>
     </div>
   </div>
 </section>
@@ -402,6 +426,17 @@ async function executeCustomStrategy() {
   runStrategy('custom', rule);
 }
 
+function renderMarkdown(text) {
+  return text
+    .replace(/## (.+)/g, '<h3 style="color:var(--accent);margin:12px 0 6px">$1</h3>')
+    .replace(/### (.+)/g, '<h4 style="color:var(--text);margin:10px 0 4px">$1</h4>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>')
+    .replace(/\| (.+)/g, (m) => '<div style="font-family:var(--mono);font-size:.75rem;color:var(--text2)">' + m + '</div>')
+    .replace(/^- (.+)/gm, '<div style="padding-left:12px">• $1</div>')
+    .replace(/^(\d+)\. (.+)/gm, '<div style="padding-left:12px">$1. $2</div>')
+    .replace(/\n/g, '<br>');
+}
+
 function showStrategyResult(strategyId, data) {
   const toolsHtml = (data.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
   const resultText = data.result || JSON.stringify(data, null, 2);
@@ -417,7 +452,7 @@ function showStrategyResult(strategyId, data) {
       x402 服务费 $0.05 已支付${txHash ? ' · <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan)">查看链上交易</a>' : ''}
     </p>
     <div style="margin-bottom:12px">${toolsHtml}</div>
-    <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.7;max-height:400px;overflow-y:auto;white-space:pre-wrap;color:var(--text)">${resultText}</div>
+    <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.85rem;line-height:1.7;max-height:400px;overflow-y:auto;color:var(--text)">${renderMarkdown(resultText)}</div>
     <p style="margin-top:12px;font-size:.75rem;color:var(--muted)">Powered by Claude AI + ${(data.toolsUsed||[]).length} tools · OKX OnchainOS + Uniswap</p>
   </div>`;
   document.body.appendChild(modal);
