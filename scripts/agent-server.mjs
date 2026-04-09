@@ -1130,7 +1130,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
 
   if (!claude) return res.status(500).json({ error: 'Claude API not configured' });
 
-  const MAX_ROUNDS = 10;
+  const MAX_ROUNDS = 4;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: question }];
@@ -1276,7 +1276,7 @@ Available strategies:
 
 Execute the FULL strategy, not just the first step. Use multiple tool rounds.`;
 
-  const MAX_ROUNDS = 10;
+  const MAX_ROUNDS = 4;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: `Execute this strategy: ${goal}` }];
@@ -1742,14 +1742,13 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 
   const strategyPrompts = {
     'steady-yield': `你是 AutoYield AI 理财顾问。直接分析并给出结果，不要问用户问题。
+重要：最多调 2-3 个工具就给出最终结果，不要反复调用。高效第一。
 
 任务：找到 X Layer (chain 196) 上 USDC 最高收益的 DeFi 产品。
 
-步骤：
-1. 调 defi_search 搜索 X Layer 上的 USDC 收益产品
-2. 调 scan_token_security 检查排名最高产品的安全性
-3. 调 get_yield_data 获取 DefiLlama 上的收益数据对比
-4. 调 dual_engine_quote 看 Uniswap LP 的机会
+步骤（并行调用，一轮搞定）：
+1. 同时调 defi_search + get_yield_data
+2. 基于结果直接给出推荐，不需要逐个安全扫描
 
 输出格式（直接给结果，不要问用户任何问题）：
 
@@ -1772,14 +1771,14 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 - Uniswap LP: https://app.uniswap.org/positions/create?chain=xlayer`,
 
     'smart-copy': `你是 AutoYield AI 跟单顾问。直接分析并给出结果，不要问用户问题。
+重要：最多调 2-3 个工具就给出最终结果，不要反复调用。高效第一。
 
 任务：查看当前聪明钱/鲸鱼信号，分析是否值得跟单。
 
-步骤：
-1. 调 get_signals 获取最新聪明钱买入信号
-2. 挑出最值得关注的 1-3 个信号
-3. 对每个信号调 scan_token_security 安全扫描
-4. 对安全的代币调 dual_engine_quote 比较 OKX vs Uniswap 价格
+步骤（高效执行）：
+1. 调 get_signals 获取信号
+2. 挑出 1-3 个，同时调 scan_token_security 扫描
+3. 直接给结果，不需要额外调用
 
 输出格式（直接给结果）：
 
@@ -1808,7 +1807,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 
   const prompt = strategyPrompts[strategyId] || strategyPrompts['steady-yield'];
 
-  const MAX_ROUNDS = 10;
+  const MAX_ROUNDS = 4;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: prompt }];

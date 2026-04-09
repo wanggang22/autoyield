@@ -165,7 +165,7 @@ REPLY LANGUAGE: Always reply in the same language as the user's question.
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, skillName === 'okx-security' ? 300 : 200);
+      const extracted = extractEssentials(content, skillName === 'okx-security' ? 120 : 80);
       if (extracted) {
         sections.push(`### ${skillName}\n${extracted}\n`);
       }
@@ -184,7 +184,7 @@ REPLY LANGUAGE: Always reply in the same language as the user's question.
     if (!existsSync(skillPath)) continue;
     try {
       const content = readFileSync(skillPath, 'utf-8');
-      const extracted = extractEssentials(content, 200);
+      const extracted = extractEssentials(content, 80);
       if (extracted) {
         sections.push(`### ${skill}\n${extracted}\n`);
       }
