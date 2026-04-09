@@ -2025,7 +2025,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
     let response;
     try {
       response = await claude.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
         system: strategySkillPrompt,
         tools: ASK_TOOLS,
@@ -2037,7 +2037,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
         await new Promise(r => setTimeout(r, 5000));
         try {
           response = await claude.messages.create({
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-haiku-4-5-20251001',
             max_tokens: 2048,
             system: SKILL_SYSTEM_PROMPT,
             tools: ASK_TOOLS,
