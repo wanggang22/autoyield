@@ -1638,7 +1638,7 @@ async function monitorLoop() {
     if (!mon.active) continue;
     // 稳健理财: 30分钟检查一次（收益率变化慢）
     // 聪明钱跟单: 2分钟检查一次（信号时效性强）
-    const interval = mon.strategy === 'steady-yield' ? 7 * 24 * 60 * 60000 : 2 * 60000;
+    const interval = mon.strategy === 'steady-yield' ? 7 * 24 * 60 * 60000 : 60 * 60000;
     if (Date.now() - mon.lastCheck < interval) continue;
     mon.lastCheck = Date.now();
 
