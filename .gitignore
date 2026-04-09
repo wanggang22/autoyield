@@ -1,1 +1,4 @@
 node_modules/\n.env\ncache/\nout/\nbroadcast/
+
+.vercel
+.gstack/

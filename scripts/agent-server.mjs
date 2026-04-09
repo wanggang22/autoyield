@@ -2003,36 +2003,25 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 例如：[BUY:OKB:0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]
 如果有多个推荐，每个一行。只推荐安全扫描通过的代币。`,
 
-    'custom': `你是 AutoYield AI 策略顾问。直接执行用户的规则并给出结果，不要反问。
+    'custom': `你是 AutoYield AI 策略顾问。严格按照用户的规则格式输出，不要反问。
 
-重要规则：
-- 同一轮可以并行调多个工具，提高效率
-- 不要调用 agent_pay（除非明确需要付费给其他 Agent）
-- 拿到足够数据后立即生成文字总结，不要无限循环
-- 必须用中文输出，结构化（标题、列表、表格）
-- 给出可执行的建议（具体代币、金额、操作步骤）
+输出要求：
+1. 必须严格遵守用户规则中要求的字段和格式（如果用户要求 10 个字段就输出 10 个）
+2. 中文输出，结构化（用 ## 标题、列表、加粗）
+3. 拿到足够数据后立即给出完整最终结果，不要中途停止
+4. 同一轮可以并行调多个工具
+5. 不要调用 agent_pay（除非明确需要付费给其他 Agent）
 
-如果推荐了具体的代币，必须在末尾按以下格式列出（前端会解析生成一键买入按钮）：
+# 用户规则
+${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
+
+# 一键买入按钮（必须在最末尾输出，与正文用换行隔开）
+完成正文分析后，在最后一个换行后单独列出推荐代币：
+
 [BUY:代币符号:代币合约地址:链ID]
 
-链ID参考：
-- 1 = Ethereum
-- 56 = BSC
-- 137 = Polygon
-- 196 = X Layer
-- 8453 = Base
-- 501 = Solana
-
-例如：
-[BUY:LIONESS:8xKp1234abcdef...pump:501]
-[BUY:CAT:0xabc123...:8453]
-[BUY:DOGE:0xdef456...:56]
-
-每个推荐的代币一行，必须包含完整的合约地址和链ID。
-
-用户规则：${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
-
-根据规则选择合适的工具执行，调用足够工具后给出最终分析结果。`,
+链ID：1=Ethereum, 56=BSC, 137=Polygon, 196=X Layer, 8453=Base, 501=Solana
+每个推荐一行，必须包含完整合约地址和链ID。`,
   };
 
   const prompt = strategyPrompts[strategyId] || strategyPrompts['steady-yield'];
@@ -2060,7 +2049,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
     try {
       response = await claude.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+        max_tokens: 8192,
         system: strategySkillPrompt,
         tools: ASK_TOOLS,
         messages,
@@ -2072,7 +2061,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
         try {
           response = await claude.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 2048,
+            max_tokens: 8192,
             system: SKILL_SYSTEM_PROMPT,
             tools: ASK_TOOLS,
             messages,
@@ -2118,7 +2107,7 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
       messages.push({ role: 'user', content: '基于以上工具调用的所有数据，直接给出最终的中文分析结果和建议。不要再调用工具，只输出文字总结。' });
       const summaryResp = await claude.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+        max_tokens: 8192,
         system: strategySkillPrompt,
         messages,
       });
