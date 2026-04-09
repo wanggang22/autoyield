@@ -125,7 +125,7 @@ function extractEssentials(content, maxLines = 300) {
 // Strategy-specific skill sets (load full content for relevant skills only)
 const STRATEGY_SKILLS = {
   'steady-yield': {
-    okx: ['okx-security', 'okx-defi-invest', 'okx-defi-portfolio', 'okx-dex-market', 'okx-wallet-portfolio', 'okx-dex-swap', 'okx-dex-token'],
+    okx: OKX_SKILLS,
     uniswap: [
       { plugin: 'uniswap-driver', skill: 'liquidity-planner' },
       { plugin: 'uniswap-trading', skill: 'swap-integration' },
@@ -134,7 +134,7 @@ const STRATEGY_SKILLS = {
     ],
   },
   'smart-copy': {
-    okx: ['okx-security', 'okx-dex-signal', 'okx-dex-swap', 'okx-dex-token', 'okx-dex-market', 'okx-dex-trenches', 'okx-defi-invest'],
+    okx: OKX_SKILLS,
     uniswap: [
       { plugin: 'uniswap-trading', skill: 'swap-integration' },
       { plugin: 'uniswap-driver', skill: 'liquidity-planner' },
