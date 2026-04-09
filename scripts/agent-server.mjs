@@ -1130,12 +1130,18 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
 
   if (!claude) return res.status(500).json({ error: 'Claude API not configured' });
 
+  // Dynamic Skill loading based on question content
+  let askPrompt;
+  try {
+    askPrompt = buildSkillPrompt(null, question);
+    log(`  Dynamic prompt: ~${Math.round(askPrompt.length / 4)} tokens`);
+  } catch { askPrompt = SKILL_SYSTEM_PROMPT; }
+
   const MAX_ROUNDS = 4;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: question }];
 
-  // Agentic loop: continue while stop_reason is "tool_use", max 6 rounds
   let finalAnswer = '';
   for (let round = 0; round < MAX_ROUNDS; round++) {
     log(`  Round ${round + 1}...`);
@@ -1143,7 +1149,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
     const response = await claude.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
-      system: SKILL_SYSTEM_PROMPT,
+      system: askPrompt,
       tools: ASK_TOOLS,
       messages,
     });

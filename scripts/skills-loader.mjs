@@ -149,9 +149,65 @@ const STRATEGY_SKILLS = {
 };
 
 /**
- * Load and build system prompt — optionally scoped to a strategy
+ * Detect relevant skills from a free-form question
  */
-export function buildSkillPrompt(strategyId) {
+export function detectSkillsForQuestion(question) {
+  const q = (question || '').toLowerCase();
+  const okx = new Set(['okx-security']); // always include security
+  const uni = new Set();
+
+  // DeFi / yield / deposit
+  if (/收益|apy|理财|存入|aave|defi|yield|deposit|借贷|lending/.test(q)) {
+    okx.add('okx-defi-invest'); okx.add('okx-defi-portfolio'); uni.add('liquidity-planner');
+  }
+  // Price / market
+  if (/价格|行情|k线|多少钱|price|market|kline/.test(q)) {
+    okx.add('okx-dex-market'); okx.add('okx-dex-token');
+  }
+  // Signal / whale / smart money
+  if (/信号|聪明钱|鲸鱼|跟单|whale|signal|smart.?money|kol/.test(q)) {
+    okx.add('okx-dex-signal'); okx.add('okx-dex-token');
+  }
+  // Swap / trade / buy / sell
+  if (/swap|交换|买入|卖出|兑换|trade|buy|sell/.test(q)) {
+    okx.add('okx-dex-swap'); uni.add('swap-integration'); uni.add('swap-planner');
+  }
+  // LP / liquidity
+  if (/lp|流动性|uniswap|做市|liquidity|pool/.test(q)) {
+    uni.add('liquidity-planner'); uni.add('swap-integration');
+  }
+  // Meme
+  if (/meme|打狗|pump|新盘|rug/.test(q)) {
+    okx.add('okx-dex-trenches'); okx.add('okx-dex-token');
+  }
+  // Portfolio / balance
+  if (/余额|资产|portfolio|balance|钱包|持仓/.test(q)) {
+    okx.add('okx-wallet-portfolio'); okx.add('okx-defi-portfolio');
+  }
+  // Safety / security
+  if (/安全|风险|蜜罐|honeypot|rug|security|扫描/.test(q)) {
+    okx.add('okx-security'); okx.add('okx-dex-token');
+  }
+  // Gas / tx
+  if (/gas|手续费|广播|交易/.test(q)) {
+    okx.add('okx-onchain-gateway');
+  }
+
+  // Always include market for context
+  okx.add('okx-dex-market');
+
+  const uniMap = { 'liquidity-planner': 'uniswap-driver', 'swap-integration': 'uniswap-trading', 'swap-planner': 'uniswap-driver', 'pay-with-any-token': 'uniswap-trading' };
+
+  return {
+    okx: [...okx],
+    uniswap: [...uni].map(skill => ({ plugin: uniMap[skill], skill })),
+  };
+}
+
+/**
+ * Load and build system prompt — optionally scoped to a strategy or question
+ */
+export function buildSkillPrompt(strategyId, question) {
   const sections = [];
 
   // Header
@@ -181,8 +237,13 @@ ECONOMIC LOOP AWARENESS:
 REPLY LANGUAGE: Always reply in the same language as the user's question.
 `);
 
-  // Select skills based on strategy
-  const config = strategyId ? STRATEGY_SKILLS[strategyId] : null;
+  // Select skills based on strategy or question
+  let config;
+  if (strategyId) {
+    config = STRATEGY_SKILLS[strategyId];
+  } else if (question) {
+    config = detectSkillsForQuestion(question);
+  }
   const okxSkills = config?.okx || OKX_SKILLS;
   const uniSkills = config?.uniswap || UNISWAP_SKILLS;
   // Strategy-specific: load full content (300 lines). Generic/custom: truncate (80 lines)
