@@ -1776,6 +1776,41 @@ app.get('/api/execute/swap', async (req, res) => {
   }
 });
 
+// GET /api/execute/lp — Get LP deep link with AI-recommended params
+app.get('/api/execute/lp', async (req, res) => {
+  const { tokenA, tokenB, fee, minPrice, maxPrice, amount } = req.query;
+  // Generate Uniswap deep link with pre-filled params
+  const chain = 'xlayer';
+  const currencyA = tokenA || 'NATIVE';
+  const currencyB = tokenB || '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
+  const feeAmount = fee || '3000';
+  const tickSpacing = { '100': '1', '500': '10', '3000': '60', '10000': '200' }[feeAmount] || '60';
+
+  const priceRange = JSON.stringify({
+    priceInverted: false,
+    fullRange: (!minPrice && !maxPrice),
+    minPrice: minPrice || '',
+    maxPrice: maxPrice || '',
+    initialPrice: '',
+    inputMode: 'price',
+  }).replace(/"/g, '%22');
+
+  const depositState = JSON.stringify({
+    exactField: 'TOKEN0',
+    exactAmounts: { TOKEN0: amount || '1' },
+  }).replace(/"/g, '%22');
+
+  const feeState = JSON.stringify({
+    feeAmount: parseInt(feeAmount),
+    tickSpacing: parseInt(tickSpacing),
+    isDynamic: false,
+  }).replace(/"/g, '%22');
+
+  const url = `https://app.uniswap.org/positions/create?chain=${chain}&currencyA=${currencyA}&currencyB=${currencyB}&priceRangeState=${priceRange}&depositState=${depositState}&fee=${feeState}&step=1`;
+
+  res.json({ success: true, url, params: { chain, currencyA, currencyB, feeAmount, tickSpacing, minPrice, maxPrice, amount } });
+});
+
 // GET /api/strategies — List available strategies with live APY estimates
 app.get('/api/strategies', async (_req, res) => {
   log('/api/strategies: fetching live data');

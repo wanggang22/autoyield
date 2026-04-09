@@ -583,9 +583,19 @@ function getActionButtons(strategyId) {
   const OKB = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
   if (strategyId === 'steady-yield') {
+    const uid = 'lp' + Date.now();
     return `
       <a href="https://app.aave.com/?marketName=proto_xlayer_v3" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Aave 存入</a>
-      <a href="https://app.uniswap.org/positions/create?chain=xlayer" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem">去 Uniswap 添加 LP</a>`;
+      <div style="width:100%;margin-top:8px">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键添加 Uniswap LP（OKB/USDC，0.3% 费率）</div>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
+          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
+          <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
+          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeLp('${uid}')">添加 LP</button>
+        </div>
+      </div>`;
   }
 
   if (strategyId === 'smart-copy') {
@@ -839,6 +849,27 @@ function executeSwapFromInput(uid, fromToken, toToken) {
   const amount = parseFloat(input?.value || '0');
   if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
   executeSwap(fromToken, toToken, String(Math.round(amount * 1e6)));
+}
+
+// One-click LP execution
+async function executeLp(uid) {
+  const input = document.getElementById('input-' + uid);
+  const amount = input?.value || '10';
+  if (!amount || parseFloat(amount) <= 0) { showToast('请选择或输入金额', 'error'); return; }
+
+  showToast('生成 LP 链接...', 'success');
+  try {
+    const res = await fetch(AGENT_URL + '/api/execute/lp?tokenA=NATIVE&tokenB=0x74b7F16337b8972027F6196A17a631aC6dE26d22&fee=3000&amount=' + amount);
+    const data = await res.json();
+    if (data.success && data.url) {
+      window.open(data.url, '_blank');
+      showToast('已打开 Uniswap，确认添加 LP', 'success');
+    } else {
+      showToast('生成失败', 'error');
+    }
+  } catch (err) {
+    showToast('失败: ' + err.message, 'error');
+  }
 }
 
 // One-click swap execution
