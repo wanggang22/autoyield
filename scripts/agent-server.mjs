@@ -266,6 +266,50 @@ async function getLeaderboard(chain = '1', timeFrame = '4', sortBy = '1') {
   return null;
 }
 
+// Token holder distribution (top 100)
+async function getTokenHolders(chain, address, tagFilter = '') {
+  try {
+    let url = `/api/v6/dex/market/token/holder-list?chainIndex=${chain}&tokenContractAddress=${address}&pageSize=100`;
+    if (tagFilter) url += `&holderTagFilter=${tagFilter}`;
+    const result = await okxRequest('GET', url);
+    if (result.code === '0' && result.data) return result.data;
+  } catch (err) { log(`Token holders error: ${err.message}`); }
+  return null;
+}
+
+// Advanced token info (risk, dev stats, holder concentration)
+async function getTokenAdvancedInfo(chain, address) {
+  try {
+    const result = await okxRequest('GET',
+      `/api/v6/dex/market/token/advanced-info?chainIndex=${chain}&tokenContractAddress=${address}`
+    );
+    if (result.code === '0' && result.data) return result.data;
+  } catch (err) { log(`Token advanced-info error: ${err.message}`); }
+  return null;
+}
+
+// Top traders / profit addresses for a token
+async function getTokenTopTrader(chain, address, tagFilter = '') {
+  try {
+    let url = `/api/v6/dex/market/token/top-trader?chainIndex=${chain}&tokenContractAddress=${address}`;
+    if (tagFilter) url += `&traderTagFilter=${tagFilter}`;
+    const result = await okxRequest('GET', url);
+    if (result.code === '0' && result.data) return result.data;
+  } catch (err) { log(`Token top-trader error: ${err.message}`); }
+  return null;
+}
+
+// Holder cluster concentration overview
+async function getTokenClusterOverview(chain, address) {
+  try {
+    const result = await okxRequest('GET',
+      `/api/v6/dex/market/token/cluster-overview?chainIndex=${chain}&tokenContractAddress=${address}`
+    );
+    if (result.code === '0' && result.data) return result.data;
+  } catch (err) { log(`Token cluster-overview error: ${err.message}`); }
+  return null;
+}
+
 // Meme coin scanning
 async function getMemePumpTokens(chain = '501', stage = 'NEW') {
   try {
@@ -1074,6 +1118,27 @@ const ASK_TOOLS = [
     description: 'Get DeFi yield data from DefiLlama. Use to find best APY pools across Uniswap V3 and other protocols.',
     input_schema: { type: 'object', properties: {}, required: [] }
   },
+  // ── Token Deep Analysis Tools ──
+  {
+    name: 'get_token_holders',
+    description: 'Get token holder distribution (top 100). Shows holder addresses, percentages, and tags (KOL, whale, smart money, sniper). Use when analyzing token holder concentration or distribution.',
+    input_schema: { type: 'object', properties: { token: { type: 'string', description: 'Token name, symbol, or contract address' }, tag_filter: { type: 'string', description: 'Filter by tag: "1"=KOL, "3"=smart_money, "4"=whale, "6"=suspicious, "7"=sniper, "9"=bundler. Optional.' } }, required: ['token'] }
+  },
+  {
+    name: 'get_token_advanced_info',
+    description: 'Get advanced token info: risk level, creator address, dev holding %, top10 hold %, token tags (honeypot, low liquidity, smart money buy, etc). Essential for meme coin analysis.',
+    input_schema: { type: 'object', properties: { token: { type: 'string', description: 'Token name, symbol, or contract address' } }, required: ['token'] }
+  },
+  {
+    name: 'get_token_top_trader',
+    description: 'Get top traders / most profitable addresses for a token. Shows PnL, buy/sell amounts. Filter by KOL, whale, smart money, sniper.',
+    input_schema: { type: 'object', properties: { token: { type: 'string', description: 'Token name, symbol, or contract address' }, tag_filter: { type: 'string', description: 'Filter: "1"=KOL, "3"=smart_money, "4"=whale, "7"=sniper. Optional.' } }, required: ['token'] }
+  },
+  {
+    name: 'get_token_cluster',
+    description: 'Get holder cluster concentration overview: cluster level, rug pull risk %, new address %, same funding source %. Use for detecting coordinated wallets and rug pull risk.',
+    input_schema: { type: 'object', properties: { token: { type: 'string', description: 'Token name, symbol, or contract address' } }, required: ['token'] }
+  },
   // ── Agent-to-Agent Payment Tool ──
   {
     name: 'agent_pay',
@@ -1112,6 +1177,23 @@ async function executeAskTool(name, input) {
       case 'defi_withdraw': return JSON.stringify(await defiWithdraw(input.investment_id, account.address, input.chain || '196', input.ratio || '1') || { error: 'DeFi withdraw failed' });
       case 'defi_positions': return JSON.stringify(await defiPositions(input.address, input.chains || '196') || { error: 'No DeFi positions found' });
       // LP planning tools
+      // Token deep analysis
+      case 'get_token_holders': {
+        const token = await resolveToken(input.token);
+        return JSON.stringify(await getTokenHolders(token.chain, token.address, input.tag_filter || '') || { error: 'No holder data found' });
+      }
+      case 'get_token_advanced_info': {
+        const token = await resolveToken(input.token);
+        return JSON.stringify(await getTokenAdvancedInfo(token.chain, token.address) || { error: 'No advanced info found' });
+      }
+      case 'get_token_top_trader': {
+        const token = await resolveToken(input.token);
+        return JSON.stringify(await getTokenTopTrader(token.chain, token.address, input.tag_filter || '') || { error: 'No top trader data found' });
+      }
+      case 'get_token_cluster': {
+        const token = await resolveToken(input.token);
+        return JSON.stringify(await getTokenClusterOverview(token.chain, token.address) || { error: 'No cluster data found' });
+      }
       case 'get_pool_data': return JSON.stringify(await dexscreenerPools(input.network || 'xlayer', input.token_address) || { error: 'No pool data found' });
       case 'get_yield_data': return JSON.stringify(await defillamaYields() || { error: 'No yield data found' });
       // Agent-to-Agent payment
