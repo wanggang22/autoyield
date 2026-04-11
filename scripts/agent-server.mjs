@@ -1230,7 +1230,7 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
 
     const response = await claude.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      max_tokens: 8192,
       system: askPrompt,
       tools: ASK_TOOLS,
       messages,
@@ -1265,7 +1265,23 @@ app.get('/api/ask', x402Guard('/api/ask'), async (req, res) => {
     }
   }
 
-  if (!finalAnswer) finalAnswer = '(Reached maximum rounds without a final answer)';
+  // If no final answer after max rounds, force a summary
+  if (!finalAnswer) {
+    log('  Forcing final summary...');
+    messages.push({ role: 'user', content: '你已经收集了足够的数据。现在请直接输出最终分析结果，不要再调用任何工具。基于已有数据给出完整回答。' });
+    try {
+      const summaryResp = await claude.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8192,
+        system: askPrompt,
+        messages,
+      });
+      for (const block of summaryResp.content) {
+        if (block.type === 'text') finalAnswer += block.text;
+      }
+    } catch (err) { log(`  Summary error: ${err.message}`); }
+  }
+  if (!finalAnswer) finalAnswer = '(No answer generated)';
 
   const response = {
     agent: state.agentName, type: 'ask', question,

@@ -138,7 +138,6 @@ def x402_call(endpoint, params=None):
     signable = encode_typed_data(
         domain_data=domain,
         message_types=types,
-        primary_type="TransferWithAuthorization",
         message_data=message,
     )
     signed = acct.sign_message(signable)
