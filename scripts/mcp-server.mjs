@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * mcp-server.mjs — AutoYield MCP Server
+ * mcp-server.mjs — AutoYield Meme Scanner MCP Server
  *
- * Exposes AutoYield AI Agent capabilities as MCP tools.
- * Any AI Agent (Claude Code, Cursor, etc.) can install this and call our services.
- * x402 micropayments are handled automatically — caller just uses tools.
+ * 让任何 AI Agent (Claude Code, Cursor 等) 通过 MCP 工具调用 meme 币扫描服务。
+ * 用户用自然语言描述筛选标准，AI Agent 自动分析并返回推荐。
+ * x402 微支付自动处理，调用方只管用工具。
  *
  * Protocol: JSON-RPC 2.0 over stdio (MCP spec 2024-11-05)
  *
  * Env vars:
- *   AGENT_URL         — AutoYield API base URL (default: https://autoyield-production.up.railway.app)
- *   AGENT_PRIVATE_KEY — X Layer wallet private key (for auto x402 payment)
+ *   AGENT_URL         — AutoYield API (default: https://autoyield-production.up.railway.app)
+ *   AGENT_PRIVATE_KEY — X Layer 钱包私钥 (用于 x402 自动付费)
  *
  * Usage: node scripts/mcp-server.mjs
  */
@@ -32,8 +32,9 @@ const XLAYER_CHAIN = {
 const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
 
 if (!PRIVATE_KEY) {
-  process.stderr.write(`[mcp] ERROR: AGENT_PRIVATE_KEY not set. This is required for x402 auto-payment.\n`);
+  process.stderr.write(`[mcp] ERROR: AGENT_PRIVATE_KEY not set.\n`);
   process.stderr.write(`[mcp] Please set AGENT_PRIVATE_KEY in your MCP config (.mcp.json) env section.\n`);
+  process.stderr.write(`[mcp] Your wallet needs USDC on X Layer for x402 payment ($0.05/scan).\n`);
   process.exit(1);
 }
 
@@ -44,7 +45,6 @@ process.stderr.write(`[mcp] Wallet: ${account.address}\n`);
 // ── x402 Auto Payment ──────────────────────────────────────────────────────
 
 async function signX402Payment(requirements) {
-  // requirements 可能是完整的 { accepts: [...] } 或单个 accept 对象
   const accept = requirements.accepts ? requirements.accepts[0] : requirements;
   const { payTo, maxAmountRequired, asset } = accept;
 
@@ -53,10 +53,7 @@ async function signX402Payment(requirements) {
   const validBefore = String(Math.floor(Date.now() / 1000) + 3600);
 
   const domain = {
-    name: 'USD Coin',
-    version: '2',
-    chainId: 196,
-    verifyingContract: USDC_ADDRESS,
+    name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS,
   };
 
   const types = {
@@ -71,197 +68,143 @@ async function signX402Payment(requirements) {
   };
 
   const message = {
-    from: account.address,
-    to: payTo,
-    value: amount,
-    validAfter: 0n,
-    validBefore: BigInt(validBefore),
-    nonce,
+    from: account.address, to: payTo, value: amount,
+    validAfter: 0n, validBefore: BigInt(validBefore), nonce,
   };
 
   const signature = await walletClient.signTypedData({ domain, types, primaryType: 'TransferWithAuthorization', message });
 
-  // 必须匹配 agent-server x402Guard 期望的完整 payload 格式
-  const paymentPayload = {
+  return Buffer.from(JSON.stringify({
     x402Version: requirements.x402Version || 1,
     scheme: accept.scheme || 'exact',
     network: accept.network || 'eip155:196',
     payload: {
       signature,
       authorization: {
-        from: account.address,
-        to: payTo,
-        value: amount.toString(),
-        validAfter: '0',
-        validBefore: validBefore,
-        nonce,
+        from: account.address, to: payTo, value: amount.toString(),
+        validAfter: '0', validBefore: validBefore, nonce,
         asset: asset || USDC_ADDRESS,
       },
     },
-  };
-
-  return Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
+  })).toString('base64');
 }
 
-// ── MCP Tool Definitions ────────────────────────────────────────────────────
+// ── Meme Prompt Builder ─────────────────────────────────────────────────────
+
+function buildMemePrompt(query) {
+  return `你是一个专业的 meme 币猎手。根据用户的筛选标准，找出最有潜力的 meme 币。
+
+【工具调用 — 必须用这些获取实时数据，不要编造】
+1. get_meme_tokens (chain) — 获取热门 meme 币列表
+2. get_signals (chain) — 获取聪明钱/鲸鱼买入信号
+3. get_token_advanced_info — 风险等级、开发者持仓、Top10集中度
+4. scan_token_security — 安全扫描（貔貅盘、蜜罐检测）
+5. get_token_holders — 持币人分布
+6. get_token_info — 价格、市值、24h成交量（每个币必须调用）
+7. get_token_top_trader — 顶级交易者/KOL/鲸鱼持仓
+
+【并行调用策略】
+第1轮: get_meme_tokens + get_signals（并行）
+第2轮: 对所有候选币同时调 get_token_info（并行）
+第3轮: 对所有候选币同时调 get_token_advanced_info（并行）
+第4轮: 对通过初筛的币调 get_token_holders + get_token_top_trader + scan_token_security（并行）
+绝对不要一个币一个币串行查询！
+
+【数据完整性】
+每个输出的币必须有 get_token_info 返回的精确价格、市值、24h成交量。没有精确数字的币禁止输出。
+所有数字必须是工具返回的真实值，不能写"不详"、"参考"、"万级"等模糊描述。
+
+【输出格式 — 纯文本+emoji，禁止Markdown】
+分析用中文，代币名称保留英文原名。第一个字符必须是🥇，不要写任何开头分析文字。每个币：
+
+🥇 1. English Token Name (SYMBOL)
+📋 合约: 完整合约地址
+💰 价格: $0.00xxx | 市值: $xxx,xxx
+📊 24h量: $xxx,xxx | 换手率: xxx%
+📈 24h涨跌: +xx.x%
+👥 持币人: xxx | 前10持仓: xx.x%
+🔥 爆发理由: 一句话说明（中文，30字内）
+
+排名emoji: 🥇🥈🥉4️⃣5️⃣，按潜力排序。如果不足5个满足条件就输出满足的，不要凑数。
+
+【用户的筛选标准】
+${query}`;
+}
+
+// ── MCP Tool ────────────────────────────────────────────────────────────────
 
 const TOOLS = [
   {
-    name: 'autoyield_ask',
-    description: 'Ask the AutoYield AI Agent any question about crypto, DeFi, or X Layer. Uses 20+ tools (market data, signals, security, DeFi, Uniswap) to answer. x402: $0.02 USDC.',
+    name: 'meme_scan',
+    description: 'Scan and analyze meme coins across chains. Describe your filtering criteria in natural language — the AI Agent will use 7+ on-chain tools to find, filter, and rank meme coins matching your requirements. Returns detailed analysis with price, market cap, volume, holder distribution, smart money signals, and security scan. Cost: $0.05 USDC per scan (x402 auto-paid). Example queries: "Find Solana meme coins under $500K market cap with high turnover", "ETH chain meme coins with smart money buying and dev wallet empty", "Base chain new meme launches with >200 holders"',
     inputSchema: {
       type: 'object',
       properties: {
-        question: { type: 'string', description: 'Your question (e.g. "What is the best yield for USDC on X Layer?")' },
+        query: {
+          type: 'string',
+          description: 'Your meme coin search criteria in natural language. Describe what chain, market cap range, holder requirements, turnover rate, style preference, or any other filters you want. The AI will interpret and execute.',
+        },
       },
-      required: ['question'],
-    },
-  },
-  {
-    name: 'autoyield_analyze',
-    description: 'AI market analysis for any token: real-time price, K-line trends, AI insights. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string', description: 'Token name or symbol (e.g. BTC, ETH, OKB)' },
-      },
-      required: ['token'],
-    },
-  },
-  {
-    name: 'autoyield_dual_swap',
-    description: 'Compare swap quotes: OKX DEX Aggregator vs Uniswap on X Layer. Returns which engine gives better price. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        from_token: { type: 'string', description: 'Input token address on X Layer' },
-        to_token: { type: 'string', description: 'Output token address on X Layer' },
-        amount: { type: 'string', description: 'Amount in minimal units (wei)' },
-      },
-      required: ['from_token', 'to_token', 'amount'],
-    },
-  },
-  {
-    name: 'autoyield_signals',
-    description: 'Smart money / whale / KOL trading signals and top trader leaderboard. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        chain: { type: 'string', description: 'Chain index: "1" ETH, "196" X Layer, "501" Solana. Default "1"' },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'autoyield_security',
-    description: 'Scan token for security risks: honeypot, rug pull, high tax. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string', description: 'Token name, symbol, or contract address' },
-        chain: { type: 'string', description: 'Chain index, default "196"' },
-      },
-      required: ['token'],
-    },
-  },
-  {
-    name: 'autoyield_defi',
-    description: 'Search DeFi yield products on X Layer and other chains. Best APY from Aave, Uniswap LP, Lido, etc. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        token: { type: 'string', description: 'Token symbol (e.g. USDC, ETH)' },
-        chain: { type: 'string', description: 'Chain index, default "196"' },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'autoyield_portfolio',
-    description: 'Wallet holdings and portfolio value across 20+ chains. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        address: { type: 'string', description: 'Wallet address (0x...)' },
-      },
-      required: ['address'],
-    },
-  },
-  {
-    name: 'autoyield_strategy',
-    description: 'Execute multi-step AI strategy: signal-to-trade, yield optimization, portfolio rebalance, smart money follow. x402: $0.05 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        goal: { type: 'string', description: 'Strategy goal (e.g. "Find the best yield for 1000 USDC on X Layer")' },
-      },
-      required: ['goal'],
-    },
-  },
-  {
-    name: 'autoyield_trenches',
-    description: 'Hot meme coins, new launches, trend analysis. x402: $0.01 USDC.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        chain: { type: 'string', description: 'Chain index, default "1"' },
-      },
-      required: [],
+      required: ['query'],
     },
   },
 ];
 
-// ── Tool → Endpoint Mapping ────────────────────────────────────────────────
-
-const TOOL_TO_ENDPOINT = {
-  autoyield_ask:       (args) => ({ method: 'GET', path: `/api/ask?q=${encodeURIComponent(args.question)}` }),
-  autoyield_analyze:   (args) => ({ method: 'GET', path: `/api/analyze?q=${encodeURIComponent(args.token)}` }),
-  autoyield_dual_swap: (args) => ({ method: 'GET', path: `/api/dual-swap?from=${args.from_token}&to=${args.to_token}&amount=${args.amount}` }),
-  autoyield_signals:   (args) => ({ method: 'GET', path: `/api/signals?chain=${args.chain || '1'}` }),
-  autoyield_security:  (args) => ({ method: 'GET', path: `/api/security?q=${encodeURIComponent(args.token)}&chain=${args.chain || '196'}` }),
-  autoyield_defi:      (args) => ({ method: 'GET', path: `/api/defi?token=${encodeURIComponent(args.token || 'USDC')}&chain=${args.chain || '196'}` }),
-  autoyield_portfolio: (args) => ({ method: 'GET', path: `/api/portfolio?address=${args.address}` }),
-  autoyield_strategy:  (args) => ({ method: 'GET', path: `/api/strategy?q=${encodeURIComponent(args.goal)}` }),
-  autoyield_trenches:  (args) => ({ method: 'GET', path: `/api/trenches?chain=${args.chain || '1'}` }),
-};
-
-// ── Tool Execution with Auto x402 ─────────────────────────────────────────
+// ── Tool Execution ──────────────────────────────────────────────────────────
 
 async function executeTool(name, args) {
-  const endpointFn = TOOL_TO_ENDPOINT[name];
-  if (!endpointFn) return { error: `Unknown tool: ${name}` };
+  if (name !== 'meme_scan') return { error: `Unknown tool: ${name}` };
 
-  const { method, path } = endpointFn(args);
-  const url = AGENT_BASE_URL + path;
+  const rule = buildMemePrompt(args.query);
+  const url = AGENT_BASE_URL + '/api/strategy/start';
 
   try {
-    // First request
-    let res = await fetch(url);
+    // First request — will return 402
+    let res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ strategyId: 'custom', rule }),
+    });
 
     if (res.status === 402) {
-      // Parse payment requirements
       const header = res.headers.get('PAYMENT-REQUIRED') || res.headers.get('payment-required');
       let requirements;
       try {
         requirements = header ? JSON.parse(Buffer.from(header, 'base64').toString('utf-8')) : await res.json();
       } catch { requirements = await res.text(); }
 
-      // Auto-pay
-      process.stderr.write(`[mcp] x402 paying for ${name}...\n`);
+      process.stderr.write(`[mcp] x402 paying $0.05 for meme_scan...\n`);
       const paymentHeader = await signX402Payment(requirements);
-      res = await fetch(url, { headers: { 'X-PAYMENT': paymentHeader } });
+
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-PAYMENT': paymentHeader },
+        body: JSON.stringify({ strategyId: 'custom', rule }),
+      });
 
       if (res.ok) {
         const data = await res.json();
-        process.stderr.write(`[mcp] x402 paid ✓\n`);
-        return data;
+        process.stderr.write(`[mcp] x402 paid ✓ tx: ${data.payment?.transaction || 'n/a'}\n`);
+
+        // 返回精简结果给调用方
+        return {
+          result: data.result,
+          toolsUsed: data.toolsUsed,
+          stepsExecuted: data.stepsExecuted,
+          payment: data.payment ? {
+            amount: '$0.05 USDC',
+            tx: data.payment.transaction,
+            network: 'X Layer (196)',
+          } : null,
+        };
       } else {
         const body = await res.text();
-        process.stderr.write(`[mcp] x402 payment failed: ${res.status} ${body.slice(0, 200)}\n`);
+        process.stderr.write(`[mcp] x402 failed: ${res.status} ${body.slice(0, 200)}\n`);
         return { error: `x402 payment failed: ${res.status}`, detail: body.slice(0, 500) };
       }
     }
 
+    // 非 402 响应（不应该发生，但兜底）
     return await res.json();
   } catch (err) {
     return { error: err.message };
@@ -271,9 +214,9 @@ async function executeTool(name, args) {
 // ── JSON-RPC over stdio (MCP) ──────────────────────────────────────────────
 
 const SERVER_INFO = {
-  name: 'autoyield',
+  name: 'autoyield-meme',
   version: '2.0.0',
-  description: 'AutoYield AI DeFi Agent on X Layer — 20+ tools, x402 micropayments, OKX + Uniswap dual engine',
+  description: 'AutoYield Meme Scanner — AI-powered meme coin discovery with on-chain data, x402 micropayments on X Layer',
 };
 
 function handleRequest(request) {
@@ -291,18 +234,13 @@ function handleRequest(request) {
       };
 
     case 'tools/list':
-      return {
-        jsonrpc: '2.0', id,
-        result: { tools: TOOLS },
-      };
+      return { jsonrpc: '2.0', id, result: { tools: TOOLS } };
 
     case 'tools/call': {
       const { name, arguments: args } = params;
       return executeTool(name, args || {}).then(result => ({
         jsonrpc: '2.0', id,
-        result: {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        },
+        result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] },
       }));
     }
 
@@ -310,10 +248,7 @@ function handleRequest(request) {
       return null;
 
     default:
-      return {
-        jsonrpc: '2.0', id,
-        error: { code: -32601, message: `Method not found: ${method}` },
-      };
+      return { jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } };
   }
 }
 
@@ -343,6 +278,6 @@ process.stdin.on('data', async (chunk) => {
   }
 });
 
-process.stderr.write(`[mcp] AutoYield MCP Server started\n`);
+process.stderr.write(`[mcp] AutoYield Meme Scanner started\n`);
 process.stderr.write(`[mcp] API: ${AGENT_BASE_URL}\n`);
-process.stderr.write(`[mcp] Tools: ${TOOLS.length}\n`);
+process.stderr.write(`[mcp] Tool: meme_scan (1 tool, $0.05/scan)\n`);
