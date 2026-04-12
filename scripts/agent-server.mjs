@@ -2070,22 +2070,25 @@ D. Swap 路径推荐
 ## 🟡 B. X Layer LP 流动性挖矿（中风险）
 基于 get_yield_data + get_pool_data。给出 Uniswap V3 USDC 池的 APY、TVL、推荐价格区间，提示无常损失。
 
-## 🌍 C. 跨链全景对比（X Layer / Ethereum / Base / Arbitrum / BSC）
+## 🌍 C. 跨链全景对比
 基于 defi_search chain=1 + get_yield_data (DefiLlama 全链数据)。
-必须给出至少 5 条主流链的 USDC 收益对比表：
+**重要：只使用工具真实返回的数据，禁止编造、估算、或用 ~xx%* 这种形式猜测。**
+如果某条链在 get_yield_data 中没数据，表格该格子写"no data"，不要瞎猜。
+只列有真实数据的链，顺序：X Layer (本地) → Ethereum → Base → 其他有数据的链。
 
+表头：
 | 链 | 最佳借贷 APY | 最佳 LP APY | TVL | 跨链成本估算 |
-|----|------------|-----------|-----|------------|
-| X Layer | (defi_search chain=196) | (get_pool_data) | - | $0 (本地) |
-| Ethereum | (defi_search chain=1) | (get_yield_data) | - | $5-15 gas |
-| Base | (get_yield_data) | (get_yield_data) | - | $1-3 gas |
-| Arbitrum | (get_yield_data) | (get_yield_data) | - | $0.5-2 gas |
-| BSC | (get_yield_data) | (get_yield_data) | - | $0.5 gas |
 
-诚实告诉用户：**什么金额下跨链值得**（gas 成本 vs 收益差），举例计算 $1k / $10k / $100k 的回本周期。
+每行必须用真实数据：
+- X Layer: defi_search chain=196 的最佳结果
+- Ethereum: defi_search chain=1 的最佳结果 + get_yield_data 中 Ethereum 的 top LP
+- 其他链：只从 get_yield_data 数据找，没数据就写"no data"，不填数字
+
+诚实告诉用户：基于**真实数据**，什么金额下跨链值得（gas 成本 vs 收益差），举例 $1k / $10k / $100k 的回本周期。
 
 ## 💱 D. Swap 路径推荐
-基于 dual_engine_quote。如果选 LP 方案需要 USDC→ETH，OKX vs Uniswap 哪个划算？滑点对比。
+基于 dual_engine_quote。
+**注意：Uniswap API 当前可能未启用。如果 dual_engine_quote 返回了 OKX 报价但 Uniswap 失败，展示 OKX 报价并说明"Uniswap 引擎暂未启用"。不要说"两个引擎都无法报价"——至少 OKX 是有的。**
 
 ## 🎯 最终建议
 "如果你有 \$X，建议..." 给出明确步骤。
