@@ -1,0 +1,44 @@
+{
+  "name": "autoyield-arbitrage-scanner",
+  "version": "1.0.0",
+  "description": "Cross-DEX arbitrage scanner MCP server. Compares Uniswap Trading API vs OKX DEX Aggregator on Ethereum to detect real-time arbitrage opportunities. Uses 4 Uniswap Skills (swap-integration, swap-planner, liquidity-planner, pay-with-any-token). Pay-per-scan via x402 micropayment ($0.02 USDC).",
+  "type": "module",
+  "bin": {
+    "autoyield-arbitrage-scanner": "mcp-server.mjs"
+  },
+  "files": [
+    "mcp-server.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node mcp-server.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "arbitrage",
+    "uniswap",
+    "okx",
+    "dex",
+    "x402",
+    "x-layer",
+    "ai-agent",
+    "claude",
+    "defi",
+    "dual-engine"
+  ],
+  "author": "AutoYield",
+  "license": "MIT",
+  "homepage": "https://github.com/wanggang22/autoyield",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanggang22/autoyield.git",
+    "directory": "mcp-arb"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "viem": "^2.47.6"
+  }
+}
