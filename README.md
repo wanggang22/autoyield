@@ -1,9 +1,11 @@
-# AutoYield — AI Meme Hunter on X Layer
+# AutoYield — AI Meme Hunter
 
 > Build X Hackathon 2026 · X Layer Arena + Skills Arena 双提交
 
-**一句自然语言 → AI 并行调用 8 个 OKX OnchainOS Skills → 精确到合约地址的 meme 币推荐。**
-每次 $0.05 USDC（x402 OKX Facilitator，零 gas）。
+**Native to X Layer · 扫描 Solana / Ethereum / Base / BSC 四链 meme 币**
+
+一句自然语言 → AI 并行调用 8 个 OKX OnchainOS Skills → 精确到合约地址的 meme 币推荐。
+每次 $0.05 USDC（x402 结算在 X Layer，零 gas）。
 
 | 入口 | 链接 |
 |------|------|
