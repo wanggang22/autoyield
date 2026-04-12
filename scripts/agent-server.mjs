@@ -2044,41 +2044,44 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
   if (!claude) return res.status(500).json({ error: 'Claude API not configured' });
 
   const strategyPrompts = {
-    'steady-yield': `你是 AutoYield AI 理财顾问。直接分析并给出结果，不要问用户问题。
-任务：找到 X Layer (chain 196) 上 USDC 最高收益方案，覆盖借贷+LP+swap比价。
+    'steady-yield': `你是 AutoYield AI 理财顾问。任务：给用户 USDC 三类独立的收益方案对比，让用户做选择。
 
-【工具调用 — 并行执行，2轮内完成】
-第1轮（4个工具同时并行）：
-1. defi_search (chain="196", token="USDC") — OKX 借贷收益数据
-2. get_yield_data — DefiLlama 全市场 LP/Vault APY 数据
-3. get_pool_data (token_address=USDC) — Uniswap V3 LP 实时数据（流动性、费率、APR）
-4. dual_engine_quote (from=USDC, to=ETH/USDT, amount=1e6) — OKX vs Uniswap 比较 swap 报价
+【强制要求 — 必须给出 4 个独立 section，缺任何一个都是任务失败】
+A. X Layer 借贷类
+B. X Layer LP 流动性挖矿类
+C. Ethereum 跨链对比
+D. Swap 路径推荐
 
-第2轮：基于4路数据直接综合输出，不要再调用工具。
+【工具调用 — 必须全部调用，不能省略，每个工具独立支撑一个 section】
+第1轮（必须并行调用 5 个工具）：
+1. defi_search (chain="196", token="USDC") → 支撑 section A
+2. get_yield_data → 支撑 section B（DefiLlama 涵盖所有 Uniswap V3 池）
+3. get_pool_data (token_address="0x74b7F16337b8972027F6196A17a631aC6dE26d22", network="xlayer") → 支撑 section B（Uniswap LP 实时数据）
+4. defi_search (chain="1", token="USDC") → 支撑 section C（Ethereum 收益）
+5. dual_engine_quote (from_token="0x74b7F16337b8972027F6196A17a631aC6dE26d22", to_token="0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", amount="1000000000") → 支撑 section D
 
-输出格式：
+第2轮：综合输出，不要再调用工具。
 
-## 🎯 最优方案推荐
-按 APY 从高到低排，至少给出 2 类方案：
-- **借贷类**（最高 APY 借贷协议 + 安全评级）
-- **LP 类**（Uniswap V3 池子 + 价格区间建议 + 无常损失提示）
+【输出格式 — 4 个独立 section 都要】
 
-## 📊 收益对比
-| 方案 | 类型 | APY | TVL | 风险 | 协议 |
-|------|------|-----|-----|------|------|
-按收益高低排列。借贷标 🟢，LP 标 🟡（无常损失风险）。
+## 🟢 A. X Layer 借贷收益（低风险）
+基于 defi_search chain=196。给出最高 APY 借贷产品。
 
-## 💱 Swap 路径建议
-如果用户需要把 USDC 换成其他资产做 LP，给出：
-- OKX vs Uniswap 报价对比（用 dual_engine_quote 数据）
-- 推荐用哪个引擎（哪个滑点小）
+## 🟡 B. X Layer LP 流动性挖矿（中风险）
+基于 get_yield_data + get_pool_data。给出 Uniswap V3 USDC 池的 APY、TVL、推荐价格区间，提示无常损失。
 
-## 💡 执行建议
-明确步骤：先 swap → 然后存入哪个池/协议。
+## 🌍 C. 跨链对比（X Layer vs Ethereum）
+基于 defi_search chain=1。诚实告诉用户 Ethereum 上 USDC 借贷 APY 是多少。计算跨链成本：什么金额下值得跨。
+
+## 💱 D. Swap 路径推荐
+基于 dual_engine_quote。如果选 LP 方案需要 USDC→ETH，OKX vs Uniswap 哪个划算？滑点对比。
+
+## 🎯 最终建议
+"如果你有 \$X，建议..." 给出明确步骤。
 
 ## 🔗 一键执行链接
-- Aave: https://app.aave.com/?marketName=proto_xlayer_v3
-- Uniswap Swap: https://app.uniswap.org/swap?chain=xlayer
+- Aave (X Layer): https://app.aave.com/?marketName=proto_xlayer_v3
+- Aave (ETH): https://app.aave.com/
 - Uniswap LP: https://app.uniswap.org/positions/create?chain=xlayer`,
 
     'smart-copy': `你是 AutoYield AI 跟单顾问。直接分析并给出结果，不要问用户问题。
