@@ -136,7 +136,7 @@ ${query}`;
 const TOOLS = [
   {
     name: 'meme_scan',
-    description: 'Scan and analyze meme coins across chains. Describe your filtering criteria in natural language — the AI Agent will use 7+ on-chain tools to find, filter, and rank meme coins matching your requirements. Returns detailed analysis with price, market cap, volume, holder distribution, smart money signals, and security scan. Cost: $0.05 USDC per scan (x402 auto-paid). Example queries: "Find Solana meme coins under $500K market cap with high turnover", "ETH chain meme coins with smart money buying and dev wallet empty", "Base chain new meme launches with >200 holders"',
+    description: 'Scan and analyze meme coins across chains. Describe your filtering criteria in natural language — the AI Agent will use 7+ on-chain tools to find, filter, and rank meme coins matching your requirements. Returns detailed analysis with price, market cap, volume, holder distribution, smart money signals, and security scan. Cost: $0.05 USDC per scan (x402 auto-paid). Example queries: "Find Solana meme coins under $500K market cap with high turnover", "ETH chain meme coins with smart money buying and dev wallet empty", "Base chain new meme launches with >200 holders". CRITICAL DISPLAY RULE: When showing results to user, you MUST preserve the FULL CONTRACT ADDRESS for every coin (the 📋 合约: line). Never summarize results into a table that drops contract addresses — users need the address to actually buy the token. Display each coin\'s contract address verbatim in monospace/code formatting.',
     inputSchema: {
       type: 'object',
       properties: {

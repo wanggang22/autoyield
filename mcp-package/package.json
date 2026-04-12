@@ -1,6 +1,6 @@
 {
   "name": "autoyield-meme-scanner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered meme coin scanner MCP server. One natural language query triggers 8 OKX OnchainOS APIs via Claude AI agent. Pay-per-scan via x402 micropayment ($0.05 USDC on X Layer).",
   "type": "module",
   "bin": {
