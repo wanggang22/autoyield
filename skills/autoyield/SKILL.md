@@ -3,7 +3,7 @@ name: autoyield
 description: "AutoYield AI DeFi Agent on X Layer. Use this skill when users want to: analyze crypto tokens, get smart money/whale signals, scan token security (honeypot/rug pull), find DeFi yields, compare swap quotes (OKX vs Uniswap dual engine), check wallet portfolios, discover meme coins, or run multi-step AI strategies. All endpoints are paid via x402 micropayments (USDC on X Layer, zero gas). Do NOT use for direct token transfers — use okx-dex-swap. Do NOT use for wallet balance queries — use okx-wallet-portfolio."
 license: MIT
 metadata:
-  author: wanggang22
+  author: AutoYield
   version: "2.0.0"
   homepage: "https://autoyield-eight.vercel.app"
   github: "https://github.com/wanggang22/autoyield"
