@@ -2107,8 +2107,9 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
 1. 严格遵守用户规则中的字段和格式（用户要求 10 个字段就输出 10 个）
 2. 中文输出，结构化（## 标题、列表、加粗）
 3. 拿到足够数据后立即给出完整最终结果，不要中途停止
-4. 同一轮可以并行调多个工具
+4. 【关键性能要求】同一轮必须尽量并行调用多个工具！例如：拿到10个候选币后，第二轮同时对所有候选币调用 get_token_info + get_token_advanced_info（一轮20个工具调用）。不要一个币一个币地串行查询，这会浪费轮次。
 5. 不要调用 agent_pay
+6. 你有20轮工具调用机会，合理分配：第1轮获取列表，第2-3轮批量查详情，第4-5轮补充安全/交易者数据，剩余轮次用于分析输出
 
 # 用户规则
 ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
@@ -2143,7 +2144,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
     strategySkillPrompt = SKILL_SYSTEM_PROMPT;
   }
 
-  const MAX_ROUNDS = 10;
+  const MAX_ROUNDS = 20;
   const allToolsUsed = [];
   const allToolData = {};
   let messages = [{ role: 'user', content: prompt }];
