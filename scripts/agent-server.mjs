@@ -2071,24 +2071,33 @@ D. Swap 路径推荐
 基于 get_yield_data + get_pool_data。给出 Uniswap V3 USDC 池的 APY、TVL、推荐价格区间，提示无常损失。
 
 ## 🌍 C. 跨链全景对比
-基于 defi_search chain=1 + get_yield_data (DefiLlama 全链数据)。
-**重要：只使用工具真实返回的数据，禁止编造、估算、或用 ~xx%* 这种形式猜测。**
-如果某条链在 get_yield_data 中没数据，表格该格子写"no data"，不要瞎猜。
-只列有真实数据的链，顺序：X Layer (本地) → Ethereum → Base → 其他有数据的链。
+
+【死硬规则 — 违反视为严重错误】
+1. 表格中**只能填写**工具数据里**真实出现过的数字**
+2. **绝对禁止**用 ~、约、大约、左右、典型、估算 等字样
+3. **绝对禁止**编造没有工具数据支撑的数字（即使你"知道"BSC 是 20%）
+4. 如果 get_yield_data 中没有 Arbitrum/BSC 的数据 → 表格中那一行**不要出现**（整行删掉）
+5. 只列 get_yield_data 真实返回数据里的链。没数据的链不列。
+
+正确做法：
+- 看 get_yield_data 返回的数据，提取每个链的真实 APY
+- 只展示真实有数据的链（X Layer / Ethereum / Base 等）
+- 如果只有 3 条链真有数据，表格就只有 3 行
+
+错误做法（永不允许）：
+- "Arbitrum ~15-30%（典型 V3 池）" ❌ 估算
+- "BSC ~20-40% (PancakeSwap)" ❌ 估算
+- 任何不是工具直接返回的数字 ❌
 
 表头：
-| 链 | 最佳借贷 APY | 最佳 LP APY | TVL | 跨链成本估算 |
+| 链 | 最佳借贷 APY | 最佳 LP APY | TVL | 跨链成本 |
 
-每行必须用真实数据：
-- X Layer: defi_search chain=196 的最佳结果
-- Ethereum: defi_search chain=1 的最佳结果 + get_yield_data 中 Ethereum 的 top LP
-- 其他链：只从 get_yield_data 数据找，没数据就写"no data"，不填数字
-
-诚实告诉用户：基于**真实数据**，什么金额下跨链值得（gas 成本 vs 收益差），举例 $1k / $10k / $100k 的回本周期。
+诚实告诉用户：基于**真实工具数据**，什么金额下跨链值得，举例 $1k / $10k / $100k 的回本周期。
 
 ## 💱 D. Swap 路径推荐
-基于 dual_engine_quote。
-**注意：Uniswap API 当前可能未启用。如果 dual_engine_quote 返回了 OKX 报价但 Uniswap 失败，展示 OKX 报价并说明"Uniswap 引擎暂未启用"。不要说"两个引擎都无法报价"——至少 OKX 是有的。**
+基于 okx_swap_quote (OKX DEX Aggregator，聚合 500+ 流动性源，已包含 Uniswap)。
+展示 USDC→ETH 的 OKX 报价、预期滑点、路径信息。
+不要提"Uniswap 引擎"、"双引擎"——现在只用 OKX。
 
 ## 🎯 最终建议
 "如果你有 \$X，建议..." 给出明确步骤。
@@ -2186,7 +2195,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
       { name: 'get_yield_data',     exec: () => executeAskTool('get_yield_data', {}) },
       { name: 'get_pool_data',      exec: () => executeAskTool('get_pool_data', { token_address: USDC_XLAYER, network: 'xlayer' }) },
       { name: 'defi_search_eth',    exec: () => executeAskTool('defi_search', { chain: '1', token: 'USDC', product_group: 'SINGLE_EARN' }) },
-      { name: 'dual_engine_quote',  exec: () => executeAskTool('dual_engine_quote', { from_token: USDC_XLAYER, to_token: ETH_XLAYER, amount: '1000000000' }) },
+      { name: 'okx_swap_quote',     exec: () => executeAskTool('get_swap_quote', { chain: '196', from_token: USDC_XLAYER, to_token: ETH_XLAYER, amount: '1000000000' }) },
     ];
     const preResults = await Promise.all(preCalls.map(async c => {
       try {
