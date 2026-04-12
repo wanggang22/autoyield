@@ -1,6 +1,6 @@
 ---
 name: autoyield
-description: "AutoYield AI DeFi Agent on X Layer. Use this skill when users want to: analyze crypto tokens, get smart money/whale signals, scan token security (honeypot/rug pull), find DeFi yields, compare swap quotes (OKX vs Uniswap dual engine), check wallet portfolios, discover meme coins, or run multi-step AI strategies. All endpoints are paid via x402 micropayments (USDC on X Layer, zero gas). Do NOT use for direct token transfers — use okx-dex-swap. Do NOT use for wallet balance queries — use okx-wallet-portfolio."
+description: "AutoYield Meme Scanner on X Layer. AI-powered meme coin discovery — one natural language query triggers 8 OKX OnchainOS APIs via 20-round AI agent loop. Use this skill when users want to find, filter, and rank meme coins on any chain (Solana, ETH, Base, etc.) with custom criteria. Paid via x402 micropayment ($0.05 USDC on X Layer, zero gas)."
 license: MIT
 metadata:
   author: AutoYield
@@ -9,129 +9,98 @@ metadata:
   github: "https://github.com/wanggang22/autoyield"
 ---
 
-# AutoYield — AI DeFi Agent on X Layer
+# AutoYield Meme Scanner
 
-AI 帮你在 X Layer 上自动赚钱。选一个策略，AI Agent 用 17 个 OKX + Uniswap Skills 扫描全市场，给你最优 DeFi 建议。
+用自然语言描述你的 meme 币筛选标准，AI Agent 自动调用 8 个链上数据 API 分析并返回推荐。
 
 - **Frontend:** https://autoyield-eight.vercel.app
 - **API:** https://autoyield-production.up.railway.app
 - **GitHub:** https://github.com/wanggang22/autoyield
 
-## Endpoints
+## Architecture
 
-Base URL: `https://autoyield-production.up.railway.app`
+```
+MCP 入口: meme_scan (自然语言 → $0.05 USDC x402)
+  └── AI Agent 编排层 (Claude Haiku 4.5, 最多20轮并行工具调用)
+       ├── get_meme_tokens    — OKX DEX Trenches API (热门meme币列表)
+       ├── get_signals         — OKX Signal API (聪明钱/鲸鱼买入信号)
+       ├── get_token_info      — OKX Token API (价格/市值/24h成交量)
+       ├── get_token_advanced_info — OKX Token API (风险等级/开发者持仓/Top10集中度)
+       ├── scan_token_security — OKX Security API (蜜罐/貔貅盘/高税率检测)
+       ├── get_token_holders   — OKX Market API (持币人分布/前10占比)
+       ├── get_token_top_trader — OKX Market API (顶级交易者/KOL持仓)
+       └── get_token_cluster   — OKX Market API (地址聚类分析)
+```
 
-### AI Ask — 通用 AI 问答
-```
-GET /api/ask?q={question}
-x402: $0.02 USDC
-```
-AI Agent 调用 20+ 工具回答任何加密/DeFi 问题。
+## MCP Tool
 
-### Token Analysis — 代币分析
-```
-GET /api/analyze?q={token}
-x402: $0.01 USDC
-```
-实时价格、K线趋势、AI 分析洞察。
+### meme_scan
 
-### Smart Money Signals — 聪明钱信号
-```
-GET /api/signals?chain={chainIndex}
-x402: $0.01 USDC
-```
-聪明钱/鲸鱼/KOL 交易信号，顶级交易者排行榜。
+用自然语言描述筛选标准，AI 自动解析并执行。
 
-Chain: `1`=ETH, `56`=BSC, `196`=X Layer, `501`=Solana
+**Cost:** $0.05 USDC per scan (x402 auto-paid)
 
-### Token Security — 代币安全扫描
+**Input:**
+```json
+{
+  "query": "your filtering criteria in natural language"
+}
 ```
-GET /api/security?q={token}&chain={chainIndex}
-x402: $0.01 USDC
-```
-蜜罐、貔貅盘、高税率等风险检测。
 
-### DeFi Yield — DeFi 收益搜索
+**Examples:**
 ```
-GET /api/defi?token={symbol}&chain={chainIndex}
-x402: $0.01 USDC
+"Find Solana meme coins under $500K market cap with high turnover and healthy holder distribution"
+"ETH chain meme coins with smart money buying signals, dev wallet empty, LP burned"
+"Base chain new meme launches with >200 holders and turnover rate >100%"
+"Solana 上市值 10K-500K、换手率超50%、前10持仓低于25%的搞笑 meme 币"
 ```
-搜索 DeFi 收益产品（Aave、Uniswap LP、Lido 等），AI 给出推荐。
 
-### Dual-Engine Swap — 双引擎比价
-```
-GET /api/dual-swap?from={tokenAddr}&to={tokenAddr}&amount={wei}
-x402: $0.01 USDC
-```
-OKX DEX Aggregator vs Uniswap 比价，返回最优引擎。
+**Output:** Ranked list of meme coins with:
+- Token name, symbol, contract address
+- Price, market cap, 24h volume, turnover rate
+- 24h price change
+- Holder count, top 10 concentration
+- Explosion reason (one-line insight)
 
-### Portfolio — 钱包分析
-```
-GET /api/portfolio?address={walletAddress}
-x402: $0.01 USDC
-```
-钱包持仓和组合价值（支持 20+ 链）。
+## API Endpoint
 
-### Meme Trenches — Meme 币发现
 ```
-GET /api/trenches?chain={chainIndex}
-x402: $0.01 USDC
-```
-热门 meme 币、新上线、趋势分析。
+POST https://autoyield-production.up.railway.app/api/strategy/start
+Content-Type: application/json
+X-PAYMENT: <base64 x402 signature>
 
-### Strategy — 多步骤 AI 策略
+{
+  "strategyId": "custom",
+  "rule": "your meme coin filtering criteria"
+}
 ```
-GET /api/strategy?q={goal}
-x402: $0.05 USDC
-```
-复杂策略执行：信号→分析→交易、收益优化、组合再平衡、聪明钱跟单。
 
-### Custom Strategy — 自定义策略
-```
-POST /api/strategy/start
-Body: { "strategyId": "custom", "rule": "你的指令" }
-x402: $0.05 USDC
-```
-自定义规则，AI Agent 最多 20 轮工具调用执行。
+## AI Agent Execution Flow
 
-### Economic Loop — 经济循环演示
-```
-GET /api/economic-loop
-x402: $0.02 USDC
-```
-Agent 经济循环：赚取 → 分析 → 投资 → 支付 → 再赚取。
+1. **Round 1:** `get_meme_tokens` + `get_signals` (parallel) — get candidate list + smart money signals
+2. **Round 2:** `get_token_info` x10 (parallel) — precise price/mcap/volume for all candidates
+3. **Round 3:** `get_token_advanced_info` x10 (parallel) — risk/dev holding/top10 for all candidates
+4. **Round 4:** `get_token_holders` + `get_token_top_trader` + `scan_token_security` (parallel) — deep dive on filtered candidates
+5. **Round 5-6:** Additional data if needed, then generate final ranked output
 
-### Agent Pay — Agent 间支付
-```
-GET /api/agent-pay?target={url}&amount={usdc}
-x402: $0.01 USDC
-```
-向另一个 AI Agent 的 x402 端点付费调用，自动处理 402 协商和签名。
-
-### Free Endpoints（无需付费）
-- `GET /api/` — 所有端点列表
-- `GET /status` — Agent 状态、钱包地址、运行时间
-- `GET /api/strategy/status?address={addr}` — 组合和策略状态
+Typical scan: **5-8 rounds, 30-60 tool calls, 45-70 seconds.**
 
 ## x402 Payment Flow
 
-所有付费端点使用 x402 微支付协议（USDC on X Layer，零 gas）：
+1. POST request → HTTP `402 Payment Required`
+2. Read `PAYMENT-REQUIRED` header (base64 JSON) → get amount, payTo, asset
+3. Sign EIP-3009 `TransferWithAuthorization` for USDC on X Layer
+4. Replay with `X-PAYMENT` header (base64 signed payload)
+5. Receive AI analysis result
 
-1. 请求端点 → 返回 HTTP `402 Payment Required`
-2. 读取 `PAYMENT-REQUIRED` header（base64 JSON）获取金额、收款地址
-3. 签名 EIP-3009 `TransferWithAuthorization`
-4. 带 `X-PAYMENT` header（base64 签名）重放请求
-5. 获取结果
-
-### On-Chain 参数
-| 参数 | 值 |
-|------|-----|
+### On-Chain Parameters
+| Parameter | Value |
+|-----------|-------|
 | Network | X Layer (chain ID 196) |
 | USDC | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` |
 | AgentRegistry | `0x7337a8963Dc7Cf0644f9423bBE397b3D0f97ACa1` |
-| Uniswap Router | `0x5507749f2c558bb3e162c6e90c314c092e7372ff` |
-| Facilitator | OKX x402 (零 gas 结算) |
-| 签名方式 | EIP-3009 TransferWithAuthorization |
+| Facilitator | OKX x402 (zero gas settlement) |
+| Signing | EIP-3009 TransferWithAuthorization |
 
 ### EIP-712 Domain
 ```json
@@ -143,14 +112,14 @@ x402: $0.01 USDC
 }
 ```
 
-## MCP Integration
+## MCP Installation
 
-在 Claude Code 或 Cursor 中使用 AutoYield 作为工具：
+Add to your `.mcp.json` (Claude Code / Cursor):
 
 ```json
 {
   "mcpServers": {
-    "autoyield": {
+    "autoyield-meme": {
       "command": "node",
       "args": ["scripts/mcp-server.mjs"],
       "env": {
@@ -161,3 +130,25 @@ x402: $0.01 USDC
   }
 }
 ```
+
+Requires: Node.js 18+, USDC on X Layer wallet.
+
+## Supported Chains
+
+| Chain | Index | Meme Support |
+|-------|-------|-------------|
+| Solana | 501 | Full (trending + signals) |
+| Ethereum | 1 | Full |
+| Base | 8453 | Full |
+| BSC | 56 | Full |
+| X Layer | 196 | Full |
+
+## OKX OnchainOS Skills Used
+
+| Skill | API | Purpose |
+|-------|-----|---------|
+| okx-dex-trenches | DEX Trenches API | Meme token discovery, new launches |
+| okx-dex-signal | Signal API | Smart money / whale / KOL detection |
+| okx-dex-token | Token API | Price, market cap, volume, advanced info |
+| okx-security | Security API | Honeypot, rug pull, tax scanning |
+| okx-dex-market | Market API | Holder distribution, top traders, clustering |
