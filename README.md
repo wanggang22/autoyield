@@ -1,63 +1,77 @@
 # AutoYield — AI DeFi Agent on X Layer
 
-> Build X Hackathon 2026 | X Layer Arena + Skills Arena
+> Build X Hackathon 2026 · X Layer Arena + Skills Arena 双提交
 
-**AI 帮你在 X Layer 上自动赚钱。** 选一个策略，AI Agent 用 17 个 OKX + Uniswap Skills 扫描全市场，给你最优 DeFi 建议。
+**AI 帮你在 X Layer 上自动赚钱。** 选一个策略，付 $0.05 USDC（x402，零 gas），AI Agent 调用 17 个 Onchain OS + Uniswap Skills 分析全市场，返回可执行建议。
 
-**Live:** https://autoyield-eight.vercel.app
-**API:** https://autoyield-production.up.railway.app
-**GitHub:** https://github.com/wanggang22/autoyield
+| | |
+|--|--|
+| 🌐 Live | https://autoyield-eight.vercel.app |
+| 🔧 API | https://autoyield-production.up.railway.app |
+| 📦 NPM (MCP) | [`autoyield-meme-scanner`](https://www.npmjs.com/package/autoyield-meme-scanner) |
+| 📖 GitHub | https://github.com/wanggang22/autoyield |
+| 👀 参考客户端 | https://github.com/wanggang22/autoyield-meme-monitor |
 
-## 产品简介
+## 项目简介
 
-AutoYield 是一个 AI DeFi 策略顾问，部署在 X Layer 上。用户选择一个策略，付 $0.05 x402 服务费（零 gas），AI Agent 调用多个工具分析市场，返回具体的 DeFi 操作建议。
+AutoYield 是一个 AI DeFi 策略顾问，原生部署在 X Layer 上。用户选策略、付 $0.05 x402 服务费（零 gas），AI Agent 并行调用多个 OKX OnchainOS + Uniswap Skills 分析市场，返回带真实链上数据的 DeFi 建议。
 
-三个策略：
-- **稳健理财** — AI 搜索 X Layer 上最高收益的 DeFi 产品（Aave、Uniswap LP），给出 APY 对比和操作建议
-- **聪明钱跟单** — AI 监控鲸鱼/聪明钱信号，安全扫描后给出跟单建议（买入价、止损、用哪个引擎）
-- **自定义策略** — 用自然语言描述规则，AI 解析并执行分析
+**三个策略：**
+- **🟢 稳健理财** — AI 并行调用 5 个工具（defi_search × 2 链、get_pool_data、get_yield_data、dual_engine_quote），给出 X Layer 借贷 + LP + 跨链 + 双引擎 swap 对比完整方案
+- **🟡 聪明钱跟单** — 鲸鱼/聪明钱信号 → 安全扫描 → 双引擎买入推荐
+- **🎨 自定义/Meme 扫链** — 自然语言描述，AI 最多 20 轮并行工具调用，覆盖 meme 币发现-筛选-推荐全流程
 
-用户的资金始终在自己的钱包里，Agent 只收取 x402 服务费。
+**用户资金始终在自己钱包**，Agent 只收 x402 服务费。
 
 ## 架构概述
 
 ```
-用户（OKX Wallet / MetaMask）
-  |  选策略 → x402 签名 $0.05（零 gas）
-  v
-AutoYield Agent Server（Railway）
-  |
-  +-- Claude AI（Haiku 4.5，Skill-driven tool_use）
-  |     |-- 13 OKX SKILL.md 加载 → 安全规则、交易策略、DeFi 逻辑
-  |     |-- 4 Uniswap SKILL.md 加载 → 路由、LP 规划、x402 支付
-  |     +-- 20 工具可用，多轮执行（最多 10 轮）
-  |
-  +-- OKX OnchainOS API → 市场数据、DEX 聚合、安全扫描、DeFi、信号
-  +-- Uniswap Trading API → Swap + LP（X Layer Router: 0x5507...2ff）
-  +-- OKX x402 Facilitator → verify + settle（零 gas）
-  +-- Agentic Wallet TEE → Agent 链上身份 + 签名
-  |
-  v
-X Layer（Chain 196）
-  +-- x402 结算（USDC/USDT/USDG，OKX 代付 gas）
-  +-- Uniswap V3 池
-  +-- Aave 借贷协议
+用户（OKX Wallet / MetaMask / Claude Code / 开发者脚本）
+   │
+   │ 选策略 → x402 签名 $0.05（EIP-3009，零 gas）
+   ▼
+┌─────────────────────────────────────────┐
+│ AutoYield Agent Server (Railway)        │
+│                                          │
+│ ┌─── Claude AI Sonnet 4 ─────────────┐  │
+│ │  Skill-driven system prompt         │  │
+│ │  · 加载 17 个 SKILL.md             │  │
+│ │  · 最多 20 轮并行 tool_use         │  │
+│ │  · 预调 5 工具 (steady-yield) 防幻觉│  │
+│ └─────────────────────────────────────┘  │
+│                                          │
+│ ┌─── 22+ Claude Tools ────────────────┐ │
+│ │ • OKX OnchainOS API (13 Skills)     │ │
+│ │ • Uniswap Trading API (4 Skills)    │ │
+│ │ • DefiLlama + DexScreener           │ │
+│ │ • x402 Facilitator                  │ │
+│ │ • Agent-to-Agent pay                │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+   │
+   ▼
+┌─────────────────────────────────────────┐
+│ X Layer Mainnet (Chain 196)             │
+│  · 4 部署合约（AgentRegistry 等）       │
+│  · x402 USDC 结算（零 gas / OKX 代付）  │
+│  · Uniswap V3 + Aave V3                 │
+└─────────────────────────────────────────┘
 ```
 
 ## 部署地址
 
-### Agent 身份（X Layer Mainnet）
+### Agent 链上身份
 
 | 类型 | 地址 |
 |------|------|
-| Agentic Wallet (TEE) | `0x817c2756f2b3f0977532be533bdafbc9d32dd30f` |
+| Agentic Wallet (TEE-secured) | `0x817c2756f2b3f0977532be533bdafbc9d32dd30f` |
 | x402 收款地址 | `0x418E21F39411f513E29bFfCa1742868271Eb8a24` |
 
-### 智能合约（X Layer Mainnet, Chain 196）
+### 智能合约 (X Layer Mainnet)
 
 | 合约 | 地址 |
 |------|------|
-| AgentRegistry (v2) | `0x7337a8963Dc7Cf0644f9423bBE397b3D0f97ACa1` |
+| AgentRegistry v2 | `0x7337a8963Dc7Cf0644f9423bBE397b3D0f97ACa1` |
 | TaskManager | `0x599e23D6073426eBe357d03056258eEAa217e01D` |
 | ReputationEngine | `0x3bf87bf49141B014e4Eef71A661988624c1af29F` |
 | X402Rating | `0x85Be67F1A3c1f470A6c94b3C77fD326d3c0f1188` |
@@ -66,125 +80,173 @@ X Layer（Chain 196）
 
 | 服务 | 平台 | URL |
 |------|------|-----|
-| 前端 | Vercel | https://autoyield-eight.vercel.app |
-| 后端 API | Railway | https://autoyield-production.up.railway.app |
+| 前端 | Vercel | autoyield-eight.vercel.app |
+| 后端 API | Railway | autoyield-production.up.railway.app |
+| MCP 包 | npm | autoyield-meme-scanner |
 
 ## Onchain OS Skill 使用情况
 
-### OKX Onchain OS Skills（13 个）
+### OKX Onchain OS Skills（13 个，10+ 真实调用）
 
-| Skill | 在 AutoYield 中的作用 |
-|-------|---------------------|
-| `okx-security` | 每次交易前强制安全扫描（fail-safe：扫描失败 = 禁止交易） |
-| `okx-dex-swap` | 交易策略预设（Meme/主流/稳定币滑点）、MEV 保护 |
-| `okx-agentic-wallet` | Agent 的链上身份，TEE 签名（登录、余额、转账、合约调用） |
-| `okx-x402-payment` | Agent-to-Agent x402 支付签名 |
-| `okx-dex-market` | 实时价格、K线、钱包 PnL 分析 |
-| `okx-dex-signal` | 聪明钱/鲸鱼/KOL 信号追踪 |
-| `okx-dex-token` | 代币搜索、持仓集群、顶级交易者、流动性分析 |
-| `okx-dex-trenches` | Meme 币扫链、开发者信誉、Bundle 检测 |
-| `okx-defi-invest` | DeFi 存入/取出/领取奖励（Aave、Uniswap LP 等） |
-| `okx-defi-portfolio` | DeFi 持仓监控 |
-| `okx-wallet-portfolio` | 公开地址余额查询（50+ 链） |
-| `okx-onchain-gateway` | Gas 估计、交易模拟、广播 |
-| `okx-audit-log` | 操作审计日志 |
+| Skill | 映射工具 | 在哪个策略使用 | 真实调用 |
+|-------|---------|--------------|--------|
+| `okx-dex-trenches` | `get_meme_tokens` | meme_scan | ✅ |
+| `okx-dex-signal` | `get_signals` | smart-copy, meme_scan | ✅ |
+| `okx-dex-token` | `get_token_info/advanced_info/holders/top_trader/cluster` | meme_scan | ✅ (5 工具) |
+| `okx-security` | `scan_token_security` | smart-copy, meme_scan | ✅ |
+| `okx-defi-invest` | `defi_search` | steady-yield | ✅ |
+| `okx-defi-portfolio` | `get_yield_data` | steady-yield | ✅ |
+| `okx-dex-market` | 市场数据 | ask 端点 | ✅ |
+| `okx-dex-swap` | `get_swap_quote` | steady-yield | ✅ |
+| `okx-x402-payment` | x402 facilitator | 每次付款 | ✅ |
+| `okx-agentic-wallet` | TEE 签名 | 启动时余额查询 | ✅ |
+| `okx-wallet-portfolio` | `get_portfolio` | /api/portfolio 端点 | ✅ |
+| `okx-onchain-gateway` | gas 估计 | 辅助 | ⚠️ 部分 |
+| `okx-audit-log` | 操作日志 | 未启用 | ❌ |
 
-### Uniswap AI Skills（4 个）
+### Uniswap AI Skills（4 个，2 真实调用）
 
-| Skill | 在 AutoYield 中的作用 |
-|-------|---------------------|
-| `swap-integration` | Uniswap Trading API 集成（check_approval → quote → swap） |
-| `swap-planner` | Swap 智能规划，DexScreener 流动性/价格数据 |
-| `liquidity-planner` | LP 仓位规划（价格区间、费率、无常损失评估） |
-| `pay-with-any-token` | 余额不足时自动 swap 再支付 x402 |
+| Skill | 映射工具 | 在哪使用 | 真实调用 |
+|-------|---------|---------|--------|
+| `swap-integration` | `uniswap_quote` | steady-yield (dual_engine_quote) | ✅ (Ethereum) |
+| `liquidity-planner` | `get_pool_data` (DexScreener) | steady-yield | ✅ |
+| `swap-planner` | `get_yield_data` (DefiLlama) | steady-yield | ✅ |
+| `pay-with-any-token` | x402 扩展 | 未启用 | ❌ |
+
+**Uniswap Trading API 说明**：在 X Layer 链上流动性不足（`{errorCode: "ResourceNotFound"}`）；Ethereum 链报价正常。Section D 双引擎对比主要在 ETH 链场景展示价值。
 
 ### Skill 集成方式
 
-SKILL.md 文件在 `skills/okx/` 和 `skills/uniswap/` 目录中。`scripts/skills-loader.mjs` 在启动时加载所有 17 个 Skill，提取核心知识（安全规则、策略预设、风控逻辑），构建 ~9600 tokens 的 Claude 系统提示。
+- **加载**：启动时 `scripts/skills-loader.mjs` 读取 `skills/okx/*.md` + `skills/uniswap/*.md`
+- **注入**：提取每个 Skill 的核心规则（安全规则、策略预设、风控逻辑），构建 ~18K tokens Claude 系统提示
+- **执行**：Claude Sonnet 4 读懂 Skill 知识后自主选择工具、按 Skill 规则决策
+- **预调**：steady-yield 服务端强制预调 5 个工具，杜绝 AI 偷懒 / 幻觉
 
-Claude AI 读了这些 Skill 知识后，按照 Skill 的规则做决策：
-- 交易前必须安全扫描（okx-security 的 fail-safe 原则）
-- 按代币类型选滑点（okx-dex-swap 的策略预设）
-- 双引擎比价选最优（OKX vs Uniswap）
-- LP 按对类型选费率和区间（liquidity-planner）
+## 运作机制
 
-## 运行机制
+### 用户接入方式（三种）
 
-### 用户流程
+| 方式 | 目标用户 | 调用链路 |
+|------|---------|---------|
+| 🌐 **网页前端** | 普通用户 | 连钱包 → 选策略 → x402 签名 → 结果 |
+| 🤖 **MCP 包** | AI 开发者 (Claude Code / Cursor) | `npx autoyield-meme-scanner` + 自然语言 |
+| ⚙️ **HTTP API** | 开发者 / Bot | POST `/api/strategy/start` + 自签 x402 |
 
-```
-1. 连接 OKX Wallet / MetaMask → 切换到 X Layer
-2. 选择策略（稳健理财 / 聪明钱跟单 / 自定义）
-3. 签名 x402 支付 $0.05 USDC（EIP-3009，零 gas）
-4. AI Agent 执行（15-30 秒）：
-   a. 安全扫描目标协议
-   b. 搜索 DeFi 收益产品
-   c. 对比 OKX vs Uniswap 价格
-   d. 生成具体建议
-5. 查看分析结果 + 推荐操作
-```
-
-### 经济循环
+### 策略执行流程（以 steady-yield 为例）
 
 ```
-用户付 x402 服务费 → Agent 收入（Agentic Wallet）
-  → Agent 用收入付其他 Agent 的信号服务（Agent-to-Agent x402）
-  → 更好的信号 → 更好的建议 → 更多用户
+1. 收到请求 + x402 签名
+2. OKX facilitator verify + settle (零 gas)
+3. 服务端预调 5 个 Skill 工具（并行）：
+   · defi_search (X Layer USDC)
+   · defi_search (Ethereum USDC)
+   · get_yield_data (DefiLlama 全链)
+   · get_pool_data (DexScreener Uniswap V3)
+   · dual_engine_quote (OKX + Uniswap)
+4. Claude Sonnet 4 综合 5 路数据
+5. 输出 A-D 四类方案对比 + 跨链回本分析
 ```
 
-### 双引擎对比
+### 经济循环（Agent-to-Agent 支付）
 
-每次 swap 请求，并行查询 OKX DEX Aggregator（500+ 流动性源）和 Uniswap Trading API，比较有效输出金额后选最优。
+```
+┌─────────────────────────┐
+│ autoyield-meme-monitor  │ 每 12h 调用
+│ (GitHub Actions cron)    │
+└───────────┬─────────────┘
+            │ 付 $0.05 USDC (x402)
+            ▼
+┌─────────────────────────┐
+│ AutoYield 主 Agent      │ ← 收入
+│ · 运行 AI 分析           │
+│ · 调用外部 Agent（x402）│ ← 支出（if 需要额外数据）
+└───────────┬─────────────┘
+            │ 推送 Telegram
+            ▼
+         用户决策
+```
+
+### 双引擎对比（OKX vs Uniswap）
+
+- **OKX DEX Aggregator** — 500+ 流动性源聚合，包括 Uniswap、Curve、PancakeSwap 等
+- **Uniswap Trading API** — 直接 Uniswap V2/V3/V4 报价
+- 两边并行查询，比较最终输出 + 推荐引擎
 
 ## 项目在 X Layer 生态中的定位
 
-AutoYield 是 X Layer 上的 AI DeFi 策略顾问：
-- **原生 X Layer 应用** — 合约部署在 X Layer，x402 在 X Layer 结算，零 gas
-- **Uniswap on X Layer** — 利用 Uniswap V3 在 X Layer 上的部署做 swap 和 LP 分析
-- **Aave on X Layer** — 利用 Aave 在 X Layer 上的部署（2026.3.30 上线）做借贷收益分析
-- **OKX 生态深度集成** — 13 个 Onchain OS Skills、Agentic Wallet TEE、x402 零 gas 支付
+AutoYield 是 X Layer 上的 **AI DeFi 助手基础设施**：
+
+- **原生 X Layer 应用** — 4 合约 + x402 USDC 结算 + 零 gas（OKX facilitator）
+- **多协议集成** — Aave V3 (X Layer 借贷)、Uniswap V3 (LP + swap)、OKX DEX (聚合)
+- **OKX 生态深度绑定** — 13 个 Onchain OS Skills + TEE Agentic Wallet + x402 支付
+- **可组合 / 可扩展** — MCP 协议 + SKILL.md + npm 包，其他 AI Agent 可即刻接入
 
 ## 项目结构
 
 ```
 autoyield/
 ├── scripts/
-│   ├── agent-server.mjs      # 主服务器（策略引擎 + x402 + Claude + OKX + Uniswap）
-│   ├── skills-loader.mjs     # 加载 17 个 SKILL.md → Claude 系统提示
-│   ├── agentic-wallet.mjs    # OKX Agentic Wallet TEE 封装
-│   └── mcp-server.mjs        # MCP Server（Skills Arena）
+│   ├── agent-server.mjs        # 主服务器（策略 + x402 + Claude）
+│   ├── skills-loader.mjs       # 加载 17 个 SKILL.md
+│   ├── agentic-wallet.mjs      # TEE 钱包封装
+│   └── test-strategies.mjs     # 策略端到端测试
 ├── skills/
-│   ├── okx/                  # 13 个 OKX Onchain OS Skills
-│   └── uniswap/              # 4 个 Uniswap AI Skills
-├── src/                      # Solidity 智能合约
-├── docs/
-│   └── index.html            # 前端（策略商城 UI）
-├── Dockerfile                # Docker + onchainos 安装
+│   ├── okx/                    # 13 个 OKX Skills
+│   ├── uniswap/                # 4 个 Uniswap Skills
+│   └── autoyield/SKILL.md      # Skills Arena 提交物
+├── mcp-package/                # npm: autoyield-meme-scanner
+│   ├── package.json
+│   ├── mcp-server.mjs
+│   └── README.md
+├── src/                        # Solidity 合约
+├── docs/index.html             # 前端 UI
 └── README.md
 ```
+
+## 黑客松提交信息
+
+### X Layer Arena 提交（主产品）
+- 产品：AutoYield AI DeFi Agent
+- 亮点：17 Skills 集成、x402 零 gas、4 合约部署、3 种接入方式、实时链上数据分析
+
+### Skills Arena 提交（独立 Skill）
+- 包名：`autoyield-meme-scanner`（已发布 npm）
+- 安装：`npx -y autoyield-meme-scanner`
+- 特性：1 个 MCP 工具入口 → 8 个 OKX OnchainOS Skills 真实并行调用
+- 定位：用链上数据辅助 Agent 决策（meme 币筛选）
+
+### 目标特奖
+- 🏆 **最佳 MCP 集成** — MCP 协议标准实现 + npm 发布
+- 🏆 **最佳数据分析** — 1 个工具编排 8 个链上数据源
+- 🏆 **最佳 x402 应用** — 服务端 + 客户端都用 x402，Agent-to-Agent 场景
+- 🏆 **最佳经济循环** — meme-monitor → AutoYield → (未来：外部 Agent)
+- 🏆 **最活跃 Agent** — 定时自动扫描产生持续链上交易
 
 ## 环境变量
 
 ```bash
-AGENT_PK           # Agent 钱包私钥（x402 收款 + fallback 签名）
-OKX_API_KEY        # OKX API 凭证（Agentic Wallet + OnchainOS）
+AGENT_PK           # Agent 钱包私钥
+OKX_API_KEY        # OKX API 凭证（Agentic Wallet + OnchainOS + x402）
 OKX_SECRET_KEY
 OKX_PASSPHRASE
-ANTHROPIC_API_KEY  # Claude API Key
-UNISWAP_API_KEY    # Uniswap Trading API Key（可选）
-PORT               # HTTP 端口（默认 3080）
+ANTHROPIC_API_KEY  # Claude Sonnet 4
+UNISWAP_API_KEY    # Uniswap Trading API (https://hub.uniswap.org/)
+PORT               # 默认 3080
 ```
 
 ## 快速开始
 
 ```bash
+git clone https://github.com/wanggang22/autoyield.git
+cd autoyield
 npm install
-AGENT_PK=0x... OKX_API_KEY=... OKX_SECRET_KEY=... OKX_PASSPHRASE=... ANTHROPIC_API_KEY=... node scripts/agent-server.mjs
+# 配置 .env 后
+node scripts/agent-server.mjs
 ```
 
 ## 团队
 
-独立开发者 — Build X Hackathon 2026
+独立开发者 · Build X Hackathon 2026
 
 ## License
 
