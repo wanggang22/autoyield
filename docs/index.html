@@ -1,1435 +1,665 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoYield — AI DeFi Agent on X Layer</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>AutoYield — AI Meme Hunter on X Layer</title>
+<meta name="description" content="AI-powered meme coin discovery on X Layer. One query → 8 OKX OnchainOS Skills → ranked recommendations. Pay $0.05 USDC via x402 (zero gas).">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0b14;--bg2:#12132a;--card:#1a1c3a;--card-hover:#22244a;
-  --border:#2e3160;--text:#e8e9f3;--text2:#9a9cc0;--muted:#6b6d8a;
-  --accent:#8b5cf6;--accent2:#6366f1;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--cyan:#06b6d4;
-  --gradient:linear-gradient(135deg,#8b5cf6,#6366f1,#3b82f6);
-  --radius:12px;--font:"Inter",sans-serif;--mono:"JetBrains Mono",monospace;
-}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
-.container{max-width:1100px;margin:0 auto;padding:0 24px}
+  :root {
+    --bg: #0a0a0f;
+    --card: #13131a;
+    --card2: #1a1a24;
+    --border: #26263a;
+    --text: #e8e8f0;
+    --text2: #a0a0b8;
+    --muted: #6c6c85;
+    --accent: #8b5cf6;
+    --cyan: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    background: var(--card2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--cyan);
+  }
+  pre {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    line-height: 1.5;
+  }
 
-/* Nav */
-nav{position:sticky;top:0;z-index:100;background:rgba(10,11,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 0}
-nav .container{display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:800;font-size:1.3rem;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo span{font-weight:400;font-size:.85rem;-webkit-text-fill-color:var(--text2);margin-left:8px}
-.nav-right{display:flex;align-items:center;gap:12px}
-.btn{padding:8px 18px;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;border:none;transition:all .2s}
-.btn-primary{background:var(--gradient);color:#fff}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
-.btn-sm{padding:6px 12px;font-size:.75rem}
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--text2); font-size: 0.9rem; }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
 
-/* Hero */
-.hero{text-align:center;padding:80px 0 60px}
-.hero h1{font-size:3rem;font-weight:800;line-height:1.1;margin-bottom:16px}
-.hero h1 em{font-style:normal;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{color:var(--text2);font-size:1.1rem;max-width:600px;margin:0 auto 32px}
-.hero-stats{display:flex;justify-content:center;gap:40px;margin-top:32px}
-.hero-stat{text-align:center}
-.hero-stat .num{font-size:1.5rem;font-weight:700;color:var(--green)}
-.hero-stat .label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  /* Hero */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+    background: radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 60%);
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff, #a0a0b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text2);
+    max-width: 640px;
+    margin: 0 auto 32px;
+  }
+  .hero-cta {
+    display: inline-flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    color: white;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3); text-decoration: none; }
+  .btn-outline {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--accent); text-decoration: none; }
 
-/* Strategy Cards */
-.strategies{padding:60px 0}
-.strategies h2{text-align:center;font-size:1.8rem;margin-bottom:8px}
-.strategies .sub{text-align:center;color:var(--text2);margin-bottom:40px}
-.strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-@media(max-width:768px){.strategy-grid{grid-template-columns:1fr}}
-.strategy-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;position:relative;transition:all .3s;cursor:pointer}
-.strategy-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(139,92,246,.15)}
-.strategy-card.featured{border-color:var(--accent)}
-.strategy-badge{position:absolute;top:16px;right:16px;font-size:.65rem;padding:3px 10px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.badge-low{background:rgba(34,197,94,.15);color:var(--green)}
-.badge-med{background:rgba(245,158,11,.15);color:var(--yellow)}
-.badge-beta{background:rgba(99,102,241,.15);color:var(--accent2)}
-.strategy-icon{font-size:2rem;margin-bottom:12px}
-.strategy-card h3{font-size:1.15rem;margin-bottom:6px}
-.strategy-card .apy{font-size:1.8rem;font-weight:800;color:var(--green);margin:12px 0}
-.strategy-card .desc{color:var(--text2);font-size:.85rem;line-height:1.5;margin-bottom:16px}
-.strategy-card .skills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
-.skill-tag{font-size:.65rem;padding:2px 8px;border-radius:4px;background:rgba(139,92,246,.1);color:var(--accent);font-family:var(--mono)}
-.strategy-card .btn{width:100%}
+  /* Section */
+  section { padding: 60px 0; }
+  section h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--text2);
+    margin-bottom: 40px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 
-/* How It Works */
-.how{padding:60px 0;border-top:1px solid var(--border)}
-.how h2{text-align:center;font-size:1.5rem;margin-bottom:32px}
-.steps{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
-.step{text-align:center;flex:1;min-width:200px;max-width:250px}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--gradient);color:#fff;font-weight:700;font-size:1rem;margin-bottom:12px}
-.step h3{font-size:.95rem;margin-bottom:6px}
-.step p{font-size:.8rem;color:var(--text2);line-height:1.4}
+  /* Cards grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: rgba(139, 92, 246, 0.5); }
+  .card-icon { font-size: 1.8rem; margin-bottom: 12px; }
+  .card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .card p {
+    color: var(--text2);
+    font-size: 0.9rem;
+  }
 
-/* Skills Section */
-.skills-section{padding:40px 0;border-top:1px solid var(--border)}
-.skills-section h2{text-align:center;font-size:1.3rem;margin-bottom:24px}
-.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:768px){.skills-grid{grid-template-columns:1fr}}
-.skills-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
-.skills-box h3{font-size:.95rem;color:var(--accent);margin-bottom:8px}
-.skills-box p{font-size:.8rem;color:var(--text2);line-height:1.5}
-.arch-note{margin-top:16px;padding:12px;background:rgba(139,92,246,.06);border-radius:8px;font-size:.75rem;color:var(--text2);text-align:center}
+  /* Try section */
+  .try-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  .input-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+  .example-chip {
+    padding: 4px 10px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .result-area {
+    margin-top: 24px;
+    min-height: 100px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    line-height: 1.6;
+  }
+  .result-area.active { border-style: solid; color: var(--text); }
 
-/* Footer */
-footer{border-top:1px solid var(--border);padding:32px 0;margin-top:40px}
-footer .container{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
-.footer-brand{font-weight:700;font-size:1rem}
-.footer-links{display:flex;gap:16px}
-.footer-links a{color:var(--text2);font-size:.8rem;text-decoration:none}
-.footer-links a:hover{color:var(--accent)}
-.footer-tags{display:flex;gap:8px}
-.footer-tags span{font-size:.7rem;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text2)}
+  /* Skills grid */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .skill-item {
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .skill-item .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .skill-item .name { font-weight: 600; font-size: 0.9rem; }
+  .skill-item .desc { color: var(--text2); font-size: 0.75rem; margin-top: 2px; }
 
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px)}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;max-width:600px;width:90%;max-height:85vh;overflow-y:auto;padding:28px}
-.modal h2{font-size:1.3rem;margin-bottom:16px}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer}
+  /* Addresses */
+  .addr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .addr-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .addr-card .label { color: var(--muted); font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .addr-card code { word-break: break-all; font-size: 0.75rem; padding: 0; background: transparent; display: block; }
 
-/* Toast */
-.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:.85rem;z-index:300;animation:slideIn .3s}
-.toast-success{background:var(--green);color:#fff}
-.toast-error{background:var(--red);color:#fff}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  /* Code example */
+  .code-block {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    font-family: ui-monospace, Consolas, monospace;
+    line-height: 1.6;
+    white-space: pre;
+  }
 
-/* Loading overlay */
-.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:250;flex-direction:column;gap:16px}
-.loading-spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer .footer-links { display: flex; justify-content: center; gap: 24px; margin: 16px 0; flex-wrap: wrap; }
 
-/* Sidebar */
-.sidebar{position:fixed;top:0;right:0;width:50vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:150;display:flex;flex-direction:column}
-body{margin-right:50vw}
-.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-.sidebar-header h3{font-size:1rem;margin:0}
-.sidebar-body{flex:1;overflow-y:auto;padding:0}
-.sidebar-section{padding:16px;border-bottom:1px solid var(--border)}
-.sidebar-section h4{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-.chat-msg{padding:12px 16px;border-bottom:1px solid rgba(46,49,96,.3)}
-.chat-msg-user{background:rgba(139,92,246,.06)}
-.chat-msg-agent{background:transparent}
-.chat-msg .label{font-size:.7rem;font-weight:600;margin-bottom:4px}
-.chat-msg .label.user-label{color:var(--accent)}
-.chat-msg .label.agent-label{color:var(--green)}
-.chat-msg .body{font-size:.83rem;line-height:1.7;color:var(--text)}
-.chat-msg .meta{font-size:.7rem;color:var(--muted);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}
-.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:140;display:none}
-.sidebar-overlay.open{display:block}
-@media(max-width:768px){.sidebar{position:relative;width:100%;height:auto;min-height:50vh;border-left:none;border-top:1px solid var(--border)}body{margin-right:0;display:block}}
-@media(min-width:769px) and (max-width:1200px){.sidebar{width:45vw}body{margin-right:45vw}}
+  @media (max-width: 640px) {
+    .hero { padding: 60px 0 40px; }
+    .hero h1 { font-size: 2.2rem; }
+    .nav-links { display: none; }
+  }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="container">
-    <div class="logo">AutoYield <span>AI DeFi Agent</span></div>
-    <div class="nav-right">
-      <span class="btn btn-sm btn-outline" style="color:var(--green);border-color:var(--green)">X Layer</span>
-      <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">连接钱包</button>
+<header>
+  <div class="container nav">
+    <div class="logo">AutoYield</div>
+    <div class="nav-links">
+      <a href="#try">Try</a>
+      <a href="#how">How</a>
+      <a href="#skills">Skills</a>
+      <a href="#integrate">Integrate</a>
+      <a href="https://github.com/wanggang22/autoyield" target="_blank">GitHub</a>
     </div>
   </div>
-</nav>
+</header>
 
 <section class="hero">
   <div class="container">
-    <h1>AI 帮你在 X Layer 上<br><em>自动赚钱</em></h1>
-    <p>选一个策略，AI Agent 扫描全市场，给你最优 DeFi 建议。<br>17 个 OKX + Uniswap Skills 驱动，OKX vs Uniswap 双引擎永远拿最优价。</p>
-    <button class="btn btn-primary" style="font-size:1rem;padding:14px 32px" onclick="document.getElementById('strategies').scrollIntoView({behavior:'smooth'})">选择策略</button>
-    <p style="color:var(--muted);font-size:.8rem;margin-top:12px">每次分析 $0.05 · x402 零 gas · 资金不离开你的钱包</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="num" id="statApy">~8.5%</div><div class="label">预估 APY</div></div>
-      <div class="hero-stat"><div class="num" id="statSkills">17</div><div class="label">AI Skills</div></div>
-      <div class="hero-stat"><div class="num" id="statTools">20</div><div class="label">Claude 工具</div></div>
-      <div class="hero-stat"><div class="num">0</div><div class="label">Gas 费用</div></div>
+    <div class="hero-badge">🏆 Build X Hackathon 2026 · X Layer Arena + Skills Arena</div>
+    <h1>AI Meme Hunter<br>on X Layer</h1>
+    <p class="hero-sub">
+      一句自然语言，AI 并行调用 <strong>8 个 OKX OnchainOS Skills</strong> 分析全链 meme 币，
+      返回精确到合约地址的推荐。每次 <strong>$0.05 USDC</strong>，零 gas（x402 OKX Facilitator）。
+    </p>
+    <div class="hero-cta">
+      <a href="#try" class="btn btn-primary">🚀 立即体验</a>
+      <a href="https://www.npmjs.com/package/autoyield-meme-scanner" class="btn btn-outline" target="_blank">📦 npm 安装</a>
+      <a href="https://github.com/wanggang22/autoyield" class="btn btn-outline" target="_blank">📖 查看源码</a>
     </div>
   </div>
 </section>
 
-<section class="strategies" id="strategies">
+<!-- How it works -->
+<section id="how">
   <div class="container">
-    <h2>选择你的赚钱策略</h2>
-    <p class="sub">AI Agent 24/7 自动执行，你睡觉它赚钱</p>
-    <div class="strategy-grid">
-
-      <div class="strategy-card featured">
-        <span class="strategy-badge badge-low">低风险</span>
-        <div class="strategy-icon">&#128176;</div>
-        <h3>稳健理财</h3>
-        <div class="apy" id="steadyApy">~8.5% APY</div>
-        <p class="desc">AI 自动搜索 X Layer 上最高收益的 DeFi 产品（Aave 存款、Uniswap LP），定期检查再平衡。</p>
-        <div class="skills">
-          <span class="skill-tag">okx-defi-invest</span>
-          <span class="skill-tag">liquidity-planner</span>
-          <span class="skill-tag">okx-security</span>
-        </div>
-        <button class="btn btn-primary" onclick="runStrategy('steady-yield')">分析并推荐 · $0.05</button>
+    <h2>三种接入方式</h2>
+    <p class="section-sub">同一套 AI 能力，按你的使用场景选。都支付 $0.05 USDC / 次（x402 零 gas）。</p>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>网页前端</h3>
+        <p>直接在浏览器试用，下方自然语言输入框立刻可用。适合非开发者。</p>
       </div>
-
-      <div class="strategy-card">
-        <span class="strategy-badge badge-med">中风险</span>
-        <div class="strategy-icon">&#128051;</div>
-        <h3>聪明钱跟单</h3>
-        <div class="apy">跟着大户赚</div>
-        <p class="desc">AI 实时监控鲸鱼/聪明钱信号，安全扫描通过后自动跟单，OKX vs Uniswap 双引擎最优价。</p>
-        <div class="skills">
-          <span class="skill-tag">okx-dex-signal</span>
-          <span class="skill-tag">okx-dex-swap</span>
-          <span class="skill-tag">swap-integration</span>
-        </div>
-        <button class="btn btn-primary" style="background:linear-gradient(135deg,#f59e0b,#f97316)" onclick="runStrategy('smart-copy')">分析并推荐 · $0.05</button>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>MCP (Claude Code / Cursor)</h3>
+        <p>
+          <code>npx autoyield-meme-scanner</code> 配到 MCP 即可让 AI 自动调用。
+          支付自动处理，你只需用自然语言说出需求。
+        </p>
       </div>
-
-      <div class="strategy-card">
-        <span class="strategy-badge badge-beta">Beta</span>
-        <div class="strategy-icon">&#129302;</div>
-        <h3>自定义策略</h3>
-        <div class="apy">你说了算</div>
-        <p class="desc">用自然语言描述你的交易规则（如"ETH 跌到 3000 就买"），AI 7x24 自动执行。</p>
-        <div class="skills">
-          <span class="skill-tag">all 17 skills</span>
-          <span class="skill-tag">Claude AI</span>
-        </div>
-        <button class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)" onclick="showCustomStrategy()">设定我的规则</button>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<section class="how">
-  <div class="container">
-    <h2>三步开始赚钱</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>连接钱包</h3>
-        <p>连接 OKX Wallet 或 MetaMask，切换到 X Layer 网络。</p>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>选策略，签名付费</h3>
-        <p>选一个策略，x402 签名 $0.05 USDC（零 gas），AI 开始分析。</p>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>收到 AI 建议</h3>
-        <p>AI 用 17 个 Skill 分析市场，给出最优 DeFi 方案和具体操作步骤。</p>
+      <div class="card">
+        <div class="card-icon">⚙️</div>
+        <h3>HTTP API + Telegram Bot</h3>
+        <p>
+          定时 cron 调用 API，结果推送到 Telegram。
+          参考实现: <code>autoyield-meme-monitor</code>（Python）。
+        </p>
       </div>
     </div>
   </div>
 </section>
 
-<section class="skills-section">
+<!-- Try -->
+<section id="try" style="background: rgba(139, 92, 246, 0.03);">
   <div class="container">
-    <h2>Skill-Driven AI: 17 个专家知识驱动决策</h2>
+    <h2>🎯 立即体验</h2>
+    <p class="section-sub">用自然语言描述你要的 meme 币。连接 OKX Wallet 并支付 $0.05 USDC。</p>
+
+    <div class="try-box">
+      <div class="input-row">
+        <input id="ruleInput" type="text" placeholder='例如: 找 Solana 上市值 10K-500K、聪明钱在买的 meme 币' />
+        <button id="scanBtn" class="btn btn-primary">开始扫描</button>
+      </div>
+
+      <div class="examples">
+        <div class="example-chip" data-rule="找 Solana 上市值 10K-500K、换手率超 50%、前10持仓低于 25% 的搞笑 meme 币">Solana 搞笑 meme</div>
+        <div class="example-chip" data-rule="ETH 链聪明钱在买的 meme，市值 100K+、开发者已清仓">ETH 聪明钱跟单</div>
+        <div class="example-chip" data-rule="Base 链新上线 meme，持币人 >500、LP 已销毁 90%+">Base 新币</div>
+        <div class="example-chip" data-rule="找 Solana 上有 3 个以上聪明钱地址持续买入的 meme">Solana 强信号</div>
+      </div>
+
+      <div id="resultArea" class="result-area">
+        输入筛选标准或点击示例，然后点"开始扫描"。
+        结果会显示每个币的名称、合约地址、价格、市值、24h 量、换手率、持币人、前10 持仓、AI 推荐理由。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skills -->
+<section id="skills">
+  <div class="container">
+    <h2>8 个 OKX OnchainOS Skills</h2>
+    <p class="section-sub">每次 meme 扫描并行调用，Claude Sonnet 4 综合数据给出推荐（最多 20 轮 tool_use）。</p>
     <div class="skills-grid">
-      <div class="skills-box">
-        <h3>OKX Onchain OS (13 Skills)</h3>
-        <p>安全扫描 (fail-safe) / DEX 聚合交易 (500+源) / 聪明钱信号 / 市场数据 / K线 / 代币深度分析 / Meme 扫链 / DeFi 存取 / 钱包管理 / x402 支付 / 交易广播 / 审计日志</p>
-      </div>
-      <div class="skills-box">
-        <h3>Uniswap AI (4 Skills)</h3>
-        <p>Swap 集成 (Trading API) / Swap 规划 (DexScreener) / LP 仓位规划 (价格区间+费率) / 任意代币支付 (x402)</p>
-      </div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-trenches</div><div class="desc">热门 meme 币列表 + dev 信誉</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-signal</div><div class="desc">聪明钱 / 鲸鱼 / KOL 信号</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (info)</div><div class="desc">实时价格、市值、24h 成交量</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (advanced)</div><div class="desc">风险等级、dev 持仓、Top10 集中度</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (holders)</div><div class="desc">持币人分布、KOL 持仓</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (top traders)</div><div class="desc">最赚的地址、PnL</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (cluster)</div><div class="desc">地址聚类、rug pull 风险</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-security</div><div class="desc">蜜罐 / 貔貅盘检测</div></div></div>
     </div>
-    <div class="arch-note">
-      <strong>架构:</strong> SKILL.md 文件教 Claude AI 如何做决策（安全规则、滑点策略、MEV 保护）。API 执行决策。双引擎对比 OKX vs Uniswap 永远拿最优价。
-    </div>
+    <p class="section-sub" style="margin-top:24px;font-size:.85rem">
+      + <code>okx-x402-payment</code> 作为付费层 · + <code>okx-agentic-wallet</code> TEE 签名
+      · <a href="https://github.com/wanggang22/autoyield/tree/master/skills">查看所有 SKILL.md</a>
+    </p>
   </div>
 </section>
 
-<!-- Dashboard -->
-<section class="strategies" id="dashboard" style="display:none">
+<!-- Integrate -->
+<section id="integrate" style="background: rgba(139, 92, 246, 0.03);">
   <div class="container">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <h2 style="font-size:1.5rem;margin:0">我的仪表盘</h2>
-      <button class="btn btn-sm btn-outline" onclick="showDashboard()">刷新</button>
-    </div>
+    <h2>开发者集成</h2>
+    <p class="section-sub">适合开发者 / AI Agent 自动化使用。</p>
 
-    <!-- Position Monitor -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px">
-      <h3 style="font-size:1rem;margin-bottom:12px;color:var(--accent)">DeFi 仓位监控</h3>
-      <div id="positionsPanel" style="color:var(--text2);font-size:.85rem">连接钱包后显示你在 X Layer 上的 DeFi 仓位...</div>
-    </div>
-
-    <!-- History -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="font-size:1rem;color:var(--accent)">策略历史记录</h3>
-        <button class="btn btn-sm btn-outline" onclick="clearHistory()" style="font-size:.7rem">清空</button>
-      </div>
-      <div id="historyPanel"></div>
-    </div>
-  </div>
-</section>
-
-<section style="padding:40px 0;border-top:1px solid var(--border)">
-  <div class="container">
-    <h2 style="text-align:center;font-size:1.3rem;margin-bottom:24px">Agent 链上身份</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">Agentic Wallet (TEE)</div>
-        <code style="font-size:.7rem;color:var(--cyan);word-break:break-all">0x817c2756f2b3f0977532be533bdafbc9d32dd30f</code>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">x402 收款地址</div>
-        <code style="font-size:.7rem;color:var(--cyan);word-break:break-all">0x418E21F39411f513E29bFfCa1742868271Eb8a24</code>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">网络</div>
-        <span style="color:var(--green);font-size:.85rem;font-weight:600">X Layer Mainnet (Chain 196)</span>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:24px;padding:16px;background:rgba(139,92,246,.06);border-radius:var(--radius)">
-      <span style="color:var(--muted);font-size:.8rem">Powered by OKX Onchain OS + Uniswap AI</span>
-    </div>
-  </div>
-</section>
-
-<!-- Integration Methods -->
-<section style="padding:60px 0;border-top:1px solid var(--border)">
-  <div class="container">
-    <h2 style="text-align:center;font-size:1.5rem;margin-bottom:8px">三种接入方式</h2>
-    <p style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:32px">同一套 AI 能力，按你的场景选用。每次调用 $0.05 USDC（x402 自动支付，零 gas）。</p>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
-
-      <!-- 方式 1: 网页前端 -->
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:1.4rem">🌐</span>
-          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">网页前端</h3>
-        </div>
-        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
-          普通用户最简单的方式。打开网页 → 连 OKX Wallet → 选策略 → 自动付费。
-        </div>
-        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px">
-          <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">访问</div>
-          <code style="font-size:.75rem;color:var(--cyan);word-break:break-all">autoyield-eight.vercel.app</code>
-        </div>
-        <ul style="color:var(--text2);font-size:.78rem;padding-left:16px;margin:0;line-height:1.7">
-          <li>三种预设策略：稳健理财 / 聪明钱跟单 / 自定义</li>
-          <li>支持 OKX Wallet、MetaMask</li>
-          <li>结果直接显示在浏览器</li>
-        </ul>
-      </div>
-
-      <!-- 方式 2: MCP + Claude Code -->
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:1.4rem">🤖</span>
-          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">MCP for Claude Code / Cursor</h3>
-        </div>
-        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
-          AI 编程工具用户。一句自然语言，AI 自动调用工具并付费。
-        </div>
-        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px;font-size:.7rem;color:var(--cyan);overflow-x:auto;white-space:pre">{
+    <h3 style="font-size:1.1rem;color:var(--accent);margin:24px 0 12px">MCP (Claude Code / Cursor)</h3>
+    <div class="code-block">{
   "mcpServers": {
     "autoyield-meme": {
       "command": "npx",
       "args": ["-y", "autoyield-meme-scanner"],
       "env": {
-        "AGENT_PRIVATE_KEY": "your-key"
+        "AGENT_PRIVATE_KEY": "your-x-layer-wallet-private-key"
       }
     }
   }
 }</div>
-        <div style="margin-bottom:8px">
-          <span style="font-size:.7rem;color:var(--muted)">配完后说话：</span>
-        </div>
-        <div style="background:rgba(139,92,246,.1);padding:10px;border-radius:6px;font-size:.78rem;color:var(--text)">
-          "找 Solana 上市值 50K-300K 的 meme 币"
-        </div>
-        <div style="margin-top:12px;font-size:.7rem;color:var(--muted)">
-          npm: <code style="color:var(--cyan)">autoyield-meme-scanner</code>
-        </div>
-      </div>
 
-      <!-- 方式 3: HTTP API + GitHub Actions -->
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:1.4rem">⚙️</span>
-          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">HTTP API + 定时任务</h3>
-        </div>
-        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
-          开发者 / Bot 用户。直接调 HTTP API + 自己处理 x402 签名，可定时跑、推送 Telegram / Discord。
-        </div>
-        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px;font-size:.7rem;color:var(--cyan);overflow-x:auto;white-space:pre">POST /api/strategy/start
-Header: X-PAYMENT (x402 base64)
-Body: {
+    <h3 style="font-size:1.1rem;color:var(--accent);margin:32px 0 12px">HTTP API 直接调用</h3>
+    <div class="code-block">POST https://autoyield-production.up.railway.app/api/strategy/start
+Content-Type: application/json
+X-PAYMENT: &lt;base64 x402 signature&gt;
+
+{
   "strategyId": "custom",
-  "rule": "你的指令"
-}</div>
-        <ul style="color:var(--text2);font-size:.78rem;padding-left:16px;margin:0;line-height:1.7">
-          <li>EIP-3009 签名 USDC 付费（自己实现）</li>
-          <li>示例代码：Python / Node.js</li>
-          <li>典型场景：每日定时扫 → 推 Telegram</li>
-        </ul>
-        <div style="margin-top:12px;font-size:.7rem;color:var(--muted)">
-          参考实现: <a href="https://github.com/wanggang22/autoyield-meme-monitor" target="_blank" style="color:var(--cyan);text-decoration:none"><code style="color:var(--cyan)">github.com/wanggang22/autoyield-meme-monitor</code></a>
-        </div>
+  "rule": "找 Solana 上市值 10K-500K 的搞笑 meme 币"
+}
+
+→ 返回 AI 分析结果 + meme 币列表 + 合约地址</div>
+
+    <p class="section-sub" style="margin-top:16px;font-size:.85rem">
+      x402 支付流程：HTTP 402 → 读取 PAYMENT-REQUIRED header → EIP-3009 签名 0.05 USDC → 重放请求。
+      零 gas（OKX Facilitator 代付）。
+    </p>
+  </div>
+</section>
+
+<!-- Deployment -->
+<section>
+  <div class="container">
+    <h2>链上部署</h2>
+    <p class="section-sub">X Layer Mainnet (Chain 196) · 合约 + x402 结算 · 零 gas</p>
+
+    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px">Agent 身份</h3>
+    <div class="addr-grid" style="margin-bottom:24px">
+      <div class="addr-card">
+        <div class="label">Agentic Wallet (TEE)</div>
+        <code>0x817c2756f2b3f0977532be533bdafbc9d32dd30f</code>
       </div>
-
+      <div class="addr-card">
+        <div class="label">x402 收款地址</div>
+        <code>0x418E21F39411f513E29bFfCa1742868271Eb8a24</code>
+      </div>
     </div>
 
-    <!-- Comparison Table -->
-    <div style="margin-top:32px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;overflow-x:auto">
-      <h3 style="font-size:.95rem;margin:0 0 12px 0;color:var(--accent)">对比</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:.78rem;color:var(--text2)">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border);color:var(--text)">
-            <th style="text-align:left;padding:8px 12px">维度</th>
-            <th style="text-align:left;padding:8px 12px">网页</th>
-            <th style="text-align:left;padding:8px 12px">MCP</th>
-            <th style="text-align:left;padding:8px 12px">HTTP API</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px;color:var(--muted)">目标用户</td>
-            <td style="padding:8px 12px">普通用户</td>
-            <td style="padding:8px 12px">AI 工具用户</td>
-            <td style="padding:8px 12px">开发者 / Bot</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px;color:var(--muted)">门槛</td>
-            <td style="padding:8px 12px">连钱包</td>
-            <td style="padding:8px 12px">配 5 行 JSON</td>
-            <td style="padding:8px 12px">写代码</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px;color:var(--muted)">x402 付费</td>
-            <td style="padding:8px 12px">浏览器签名</td>
-            <td style="padding:8px 12px">自动</td>
-            <td style="padding:8px 12px">自己实现</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px;color:var(--muted)">输出</td>
-            <td style="padding:8px 12px">UI 卡片</td>
-            <td style="padding:8px 12px">AI 对话</td>
-            <td style="padding:8px 12px">JSON / 自定义</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 12px;color:var(--muted)">典型场景</td>
-            <td style="padding:8px 12px">即兴查询</td>
-            <td style="padding:8px 12px">研发工作流</td>
-            <td style="padding:8px 12px">定时推送</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="text-align:center;margin-top:24px;padding:16px;background:rgba(139,92,246,.06);border-radius:var(--radius);font-size:.85rem;color:var(--text2)">
-      底层都是同一套 API：<code style="color:var(--cyan)">/api/strategy/start</code> + Claude AI 编排 8 个 OKX OnchainOS 工具
+    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px">智能合约</h3>
+    <div class="addr-grid">
+      <div class="addr-card">
+        <div class="label">AgentRegistry v2</div>
+        <code>0x7337a8963Dc7Cf0644f9423bBE397b3D0f97ACa1</code>
+      </div>
+      <div class="addr-card">
+        <div class="label">TaskManager</div>
+        <code>0x599e23D6073426eBe357d03056258eEAa217e01D</code>
+      </div>
+      <div class="addr-card">
+        <div class="label">ReputationEngine</div>
+        <code>0x3bf87bf49141B014e4Eef71A661988624c1af29F</code>
+      </div>
+      <div class="addr-card">
+        <div class="label">X402Rating</div>
+        <code>0x85Be67F1A3c1f470A6c94b3C77fD326d3c0f1188</code>
+      </div>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="container">
-    <div class="footer-brand">AutoYield</div>
+    <div style="font-weight:600;color:var(--text);font-size:1rem">AutoYield</div>
     <div class="footer-links">
+      <a href="https://github.com/wanggang22/autoyield" target="_blank">GitHub</a>
+      <a href="https://www.npmjs.com/package/autoyield-meme-scanner" target="_blank">npm</a>
+      <a href="https://github.com/wanggang22/autoyield-meme-monitor" target="_blank">Telegram Bot</a>
       <a href="https://web3.okx.com/xlayer" target="_blank">X Layer</a>
       <a href="https://web3.okx.com/onchainos" target="_blank">OKX OnchainOS</a>
-      <a href="https://github.com/Uniswap/uniswap-ai" target="_blank">Uniswap AI</a>
     </div>
-    <div class="footer-tags">
-      <span>X Layer</span>
-      <span>x402 Zero Gas</span>
-      <span>OKX Onchain OS</span>
+    <div style="color:var(--muted);font-size:.75rem">
+      Powered by OKX Onchain OS · Build X Hackathon 2026 · MIT License
     </div>
   </div>
 </footer>
 
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h3>AutoYield AI</h3>
-    <button class="btn btn-sm btn-outline" onclick="clearHistory()" style="font-size:.65rem">清空对话</button>
-  </div>
-  <!-- Sticky tabs + positions (don't scroll away) -->
-  <div style="flex-shrink:0;border-bottom:1px solid var(--border)">
-    <div class="sidebar-section" id="sidebarPositions" style="padding:10px 16px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h4 style="margin:0;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">AI 监控</h4>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="sidebarPosContent" style="font-size:.8rem;color:var(--text2)">连接钱包启用</span>
-          <button id="stopMonitorBtn" class="btn btn-sm btn-outline" style="font-size:.6rem;display:none;padding:3px 8px;color:var(--red);border-color:var(--red)" onclick="stopMonitor()">停止</button>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex" id="chatTabs">
-      <button class="chat-tab active" onclick="switchTab('steady-yield')" id="tab-steady-yield" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">稳健理财</button>
-      <button class="chat-tab" onclick="switchTab('smart-copy')" id="tab-smart-copy" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.78rem;cursor:pointer">聪明钱跟单</button>
-      <button class="chat-tab" onclick="switchTab('custom')" id="tab-custom" style="flex:1;padding:10px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.78rem;cursor:pointer">自定义策略</button>
-    </div>
-  </div>
-  <!-- Scrollable chat area -->
-  <div class="sidebar-body" id="sidebarBody">
-    <div id="chatPanel-steady-yield" class="chat-panel"></div>
-    <div id="chatPanel-smart-copy" class="chat-panel" style="display:none"></div>
-    <div id="chatPanel-custom" class="chat-panel" style="display:none"></div>
-    <!-- Empty state -->
-    <div id="chatEmpty" style="padding:40px 16px;text-align:center;color:var(--muted);font-size:.85rem">
-      选择一个策略开始分析，或直接提问
-    </div>
-  </div>
-  <!-- Input bar -->
-  <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px">
-    <input id="chatInput" type="text" placeholder="追问或输入新问题..." style="flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;font-family:var(--font)" onkeydown="if(event.key==='Enter')sendChat()">
-    <button class="btn btn-primary btn-sm" onclick="sendChat()" style="white-space:nowrap">发送 $0.02</button>
-  </div>
-</div>
-
 <script>
-const AGENT_URL = 'https://autoyield-production.up.railway.app';
-const XLAYER_CHAIN_ID = '0xc4'; // 196
-let userAccount = null;
+  const API = 'https://autoyield-production.up.railway.app';
 
-// Fetch live strategy data
-async function loadStrategies() {
-  try {
-    const res = await fetch(AGENT_URL + '/api/strategies');
-    if (res.ok) {
-      const data = await res.json();
-      const steady = data.strategies?.find(s => s.id === 'steady-yield');
-      if (steady?.estimatedApy) {
-        document.getElementById('steadyApy').textContent = '~' + steady.estimatedApy + ' APY';
-        document.getElementById('statApy').textContent = '~' + steady.estimatedApy;
-      }
+  // Example chip clicks
+  document.querySelectorAll('.example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('ruleInput').value = chip.dataset.rule;
+    });
+  });
+
+  // Scan button
+  document.getElementById('scanBtn').addEventListener('click', async () => {
+    const rule = document.getElementById('ruleInput').value.trim();
+    if (!rule) { alert('请输入筛选标准'); return; }
+
+    const resultArea = document.getElementById('resultArea');
+    resultArea.classList.add('active');
+    resultArea.innerHTML = '🔗 连接钱包中...\n(请在浏览器授权 OKX Wallet / MetaMask)\n\n';
+
+    if (!window.ethereum) {
+      resultArea.innerHTML = '⚠️ 未检测到 Web3 钱包。\n\n请安装 OKX Wallet 或 MetaMask，或使用:\n• npm: npx autoyield-meme-scanner (MCP)\n• 或直接 curl /api/strategy/start';
+      return;
     }
-  } catch (err) { console.log('Strategy load:', err.message); }
-}
 
-// Prefer OKX Wallet on X Layer, fallback to MetaMask
-function getProvider() {
-  if (window.okxwallet) return window.okxwallet;
-  if (window.ethereum) return window.ethereum;
-  return null;
-}
-
-async function connectWallet() {
-  const provider = getProvider();
-  if (!provider) { alert('请安装 OKX Wallet 或 MetaMask'); return; }
-
-  try {
-    const accounts = await provider.request({ method: 'eth_requestAccounts' });
-    userAccount = accounts[0];
-    window._provider = provider; // Store for later use
-    const walletName = window.okxwallet ? 'OKX' : 'MetaMask';
-    document.getElementById('connectBtn').textContent = userAccount.slice(0,6) + '...' + userAccount.slice(-4);
-    document.getElementById('connectBtn').title = walletName + ' · ' + userAccount;
-    showToast(walletName + ' Wallet 已连接', 'success');
-    loadPositions();
-
-    // Switch to X Layer
     try {
-      await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID }] });
-    } catch (switchErr) {
-      if (switchErr.code === 4902) {
-        await provider.request({ method: 'wallet_addEthereumChain', params: [{ chainId: XLAYER_CHAIN_ID, chainName: 'X Layer', nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 }, rpcUrls: ['https://rpc.xlayer.tech'], blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'] }] });
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const from = accounts[0];
+
+      // Switch to X Layer
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xc4' }], // 196
+        });
+      } catch (err) {
+        if (err.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xc4', chainName: 'X Layer',
+              nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+              rpcUrls: ['https://rpc.xlayer.tech'],
+              blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'],
+            }],
+          });
+        }
       }
-    }
-  } catch (err) { console.error('Wallet connect failed:', err); }
-}
 
-function showToast(msg, type='success') {
-  const t = document.createElement('div');
-  t.className = 'toast toast-' + type;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
+      resultArea.innerHTML = '💳 请求 x402 付费信息 ($0.05 USDC)...\n';
 
-const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
-const AGENT_ADDRESS = '0x418E21F39411f513E29bFfCa1742868271Eb8a24'; // x402 payment address (must match server payTo)
-
-// x402 sign + execute strategy (one signature, AI does everything)
-async function runStrategy(strategyId, customRule) {
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-
-  const provider = window._provider || getProvider();
-  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
-
-  showToast('x402 签名 $0.05（零 gas）...', 'success');
-
-  try {
-    // Sign x402 payment (EIP-3009, zero gas, one signature covers everything)
-    const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const validBefore = Math.floor(Date.now() / 1000) + 300;
-
-    const msgParams = JSON.stringify({
-      types: {
-        EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
-        TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
-      },
-      primaryType: 'TransferWithAuthorization',
-      domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
-      message: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce },
-    });
-
-    const signature = await provider.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
-
-    const paymentPayload = {
-      x402Version: 1, scheme: 'exact', network: 'eip155:196',
-      payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '50000', validAfter: '0', validBefore: String(validBefore), nonce } },
-    };
-
-    // Show loading in sidebar
-    switchTab(strategyId);
-    const emptyEl = document.getElementById('chatEmpty');
-    if (emptyEl) emptyEl.style.display = 'none';
-    const chatDiv = document.getElementById('chatPanel-' + strategyId);
-    const userBody = strategyId === 'custom' && customRule
-      ? `<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">执行自定义策略</div><div style="white-space:pre-wrap">${customRule.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
-      : `执行${names[strategyId] || '策略'}分析`;
-    chatDiv.innerHTML += `
-      <div class="chat-msg chat-msg-user" id="strategyUserMsg">
-        <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
-        <div class="body">${userBody}</div>
-        <div class="meta" id="strategyUserMeta"><span style="color:var(--muted)">等待签名...</span></div>
-      </div>
-      <div class="chat-msg chat-msg-agent" id="strategyLoading">
-        <div class="label agent-label">AutoYield AI</div>
-        <div class="body" style="display:flex;align-items:center;gap:10px">
-          <div class="loading-spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>
-          <span style="color:var(--text2)">分析中... 安全扫描 → DeFi 搜索 → 双引擎比价（15-30秒）</span>
-        </div>
-      </div>`;
-    const body = document.getElementById('sidebarBody');
-    body.scrollTop = body.scrollHeight;
-
-    // Call strategy with x402 payment header
-    const res = await fetch(AGENT_URL + '/api/strategy/start', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)),
-      },
-      body: JSON.stringify({ strategyId, userAddress: userAccount, rule: customRule || '' }),
-    });
-
-    const data = await res.json();
-    const loadEl = document.getElementById('strategyLoading'); if (loadEl) loadEl.remove();
-    if (res.status !== 200) { showToast('失败: ' + (data.error || res.status), 'error'); return; }
-
-    showStrategyResult(strategyId, data, customRule);
-  } catch (err) {
-    const loadEl = document.getElementById('strategyLoading'); if (loadEl) loadEl.remove();
-    if (err.code === 4001) { showToast('签名已取消', 'error'); }
-    else { showToast('失败: ' + err.message, 'error'); }
-  }
-}
-
-async function showCustomStrategy() {
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.onclick = function(e) { if(e.target===this) this.remove(); };
-  modal.innerHTML = `<div class="modal" style="position:relative;max-width:500px">
-    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-    <h2 style="margin-bottom:4px">自定义策略</h2>
-    <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">用自然语言描述你的交易规则，AI 会解析并执行。</p>
-    <div style="margin-bottom:12px">
-      <textarea id="customRuleInput" placeholder="例如：&#10;• 帮我找 X Layer 上最高收益的 USDC 理财&#10;• 跟踪聪明钱信号，分析他们买的币是否安全&#10;• 比较 OKX 和 Uniswap 上 OKB/USDC 的价格" style="width:100%;min-height:100px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;resize:vertical;font-family:var(--font)"></textarea>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='帮我找 X Layer 上收益最高的 USDC DeFi 产品'">收益搜索</button>
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='查看聪明钱最近在买什么，安全扫描后告诉我值不值得跟'">聪明钱分析</button>
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('customRuleInput').value='比较 OKB 在 OKX DEX 和 Uniswap 上的价格，告诉我哪个更划算'">双引擎比价</button>
-    </div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem" onclick="executeCustomStrategy()">
-      AI 执行我的策略
-    </button>
-  </div>`;
-  document.body.appendChild(modal);
-}
-
-async function executeCustomStrategy() {
-  const input = document.getElementById('customRuleInput');
-  const rule = input?.value?.trim();
-  if (!rule) { showToast('请输入你的策略规则', 'error'); return; }
-
-  document.querySelector('.modal-overlay')?.remove();
-  runStrategy('custom', rule);
-}
-
-function renderMarkdown(text) {
-  // First pass: convert markdown links [text](url) to placeholder tokens
-  const links = [];
-  let result = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (m, label, url) => {
-    const token = '%%LINK' + links.length + '%%';
-    links.push('<a href="' + url + '" target="_blank" style="color:var(--cyan);text-decoration:underline">' + label + '</a>');
-    return token;
-  });
-
-  // Convert bare URLs (not already in a link token)
-  result = result.replace(/(https?:\/\/[^\s<")\]]+)/g, (url) => {
-    const token = '%%LINK' + links.length + '%%';
-    links.push('<a href="' + url + '" target="_blank" style="color:var(--cyan);text-decoration:underline">' + (url.length > 60 ? url.slice(0, 60) + '...' : url) + '</a>');
-    return token;
-  });
-
-  // Hide [BUY:TOKEN:ADDRESS] tags (parsed separately for buttons)
-  result = result.replace(/\[BUY:[^\]]+\]/g, '');
-
-  // Markdown formatting
-  result = result
-    .replace(/## (.+)/g, '<div style="font-size:1rem;font-weight:700;color:var(--accent);margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">$1</div>')
-    .replace(/### (.+)/g, '<div style="font-size:.9rem;font-weight:600;color:var(--text);margin:14px 0 6px">$1</div>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>')
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(139,92,246,.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:.8rem">$1</code>')
-    .replace(/^- (.+)/gm, '<div style="padding:3px 0 3px 16px;position:relative"><span style="position:absolute;left:0;color:var(--accent)">&#8227;</span> $1</div>')
-    .replace(/^(\d+)\. (.+)/gm, '<div style="padding:3px 0 3px 16px"><span style="color:var(--accent);font-weight:600">$1.</span> $2</div>')
-    .replace(/\n\n/g, '<div style="height:8px"></div>')
-    .replace(/\n/g, '<br>');
-
-  // Restore link tokens
-  for (let i = 0; i < links.length; i++) {
-    result = result.replace('%%LINK' + i + '%%', links[i]);
-  }
-  return result;
-}
-
-let activeTab = 'steady-yield';
-
-function switchTab(tabId) {
-  activeTab = tabId;
-  document.querySelectorAll('.chat-tab').forEach(t => {
-    t.style.borderBottomColor = 'transparent';
-    t.style.color = 'var(--muted)';
-    t.style.fontWeight = '400';
-  });
-  const tab = document.getElementById('tab-' + tabId);
-  if (tab) { tab.style.borderBottomColor = 'var(--accent)'; tab.style.color = 'var(--text)'; tab.style.fontWeight = '600'; }
-  document.querySelectorAll('.chat-panel').forEach(p => p.style.display = 'none');
-  const panel = document.getElementById('chatPanel-' + tabId);
-  if (panel) panel.style.display = 'block';
-  // Hide empty state if panel has content
-  const emptyEl = document.getElementById('chatEmpty');
-  if (emptyEl) emptyEl.style.display = panel && panel.innerHTML.trim() ? 'none' : 'block';
-}
-
-function getActionButtons(strategyId) {
-  const USDC = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
-  const OKB = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
-
-  if (strategyId === 'steady-yield') {
-    const uidAave = 'aave' + Date.now();
-    const uidLp = 'lp' + Date.now();
-    return `
-      <div style="width:100%">
-        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键存入 Aave（USDC）</div>
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','10')">$10</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','50')">$50</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uidAave}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uidAave}','100')">$100</button>
-          <input id="input-${uidAave}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeDefi('${uidAave}')">存入 Aave</button>
-        </div>
-      </div>
-      <div style="width:100%;margin-top:8px">
-        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键添加 Uniswap LP（OKB/USDC，0.3% 费率）</div>
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
-          <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
-          <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
-          <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeLp('${uid}')">添加 LP</button>
-        </div>
-      </div>`;
-  }
-
-  if (strategyId === 'smart-copy') {
-    return `<div id="dynamicBuyButtons" style="width:100%"></div>`;
-  }
-
-  // Custom strategy - dynamic buy buttons only
-  return `<div id="dynamicBuyButtons" style="width:100%"></div>`;
-}
-
-function showStrategyResult(strategyId, data, customRule) {
-  const toolsUsed = data.toolsUsed || [];
-  const toolsHtml = toolsUsed.map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
-  const resultText = data.result || JSON.stringify(data, null, 2);
-  const txHash = data.payment?.transaction;
-  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
-  const time = new Date().toLocaleTimeString();
-
-  // Hide empty state
-  const emptyEl = document.getElementById('chatEmpty');
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  // Switch to this strategy's tab
-  switchTab(strategyId);
-
-  const chatDiv = document.getElementById('chatPanel-' + strategyId);
-  if (!chatDiv) return;
-
-  // Update the existing user message's meta (created by runStrategy)
-  const userMeta = document.getElementById('strategyUserMeta');
-  if (userMeta) {
-    userMeta.innerHTML = `<span style="color:var(--green)">x402 $0.05 已支付</span>${txHash ? ' <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a>' : ''}`;
-    userMeta.id = '';  // so the next strategy run creates a fresh one
-    document.getElementById('strategyUserMsg')?.setAttribute('id', '');
-  } else {
-    // Fallback: user message didn't exist yet (e.g. restored from history), add one
-    chatDiv.innerHTML += `
-      <div class="chat-msg chat-msg-user">
-        <div class="label user-label">你 · ${time}</div>
-        <div class="body">执行${names[strategyId] || '策略'}分析</div>
-        <div class="meta"><span style="color:var(--green)">x402 $0.05 已支付</span>${txHash ? ' <a href="https://www.okx.com/web3/explorer/xlayer/tx/' + txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a>' : ''}</div>
-      </div>`;
-  }
-
-  // Agent response
-  chatDiv.innerHTML += `
-    <div class="chat-msg chat-msg-agent">
-      <div class="label agent-label">AutoYield AI · ${time}</div>
-      <div class="body">${renderMarkdown(resultText)}</div>
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
-        ${getActionButtons(strategyId)}
-        <button class="btn btn-sm btn-outline" style="font-size:.7rem" onclick="runStrategy('${strategyId}')">再次分析 · $0.05</button>
-      </div>
-      <div class="meta" style="margin-top:8px">${toolsHtml}</div>
-    </div>`;
-
-  // Scroll to bottom
-  const body = document.getElementById('sidebarBody');
-  body.scrollTop = body.scrollHeight;
-
-  showToast('分析完成!', 'success');
-
-  // Parse [BUY:TOKEN:ADDRESS] tags and generate buy buttons
-  if (strategyId === 'smart-copy' || strategyId === 'custom') {
-    const buyMatches = resultText.matchAll(/\[BUY:([^:]+):([^:\]]+)(?::(\d+))?\]/g);
-    const buyPanel = chatDiv.querySelector('#dynamicBuyButtons') || document.querySelectorAll('#dynamicBuyButtons');
-    const lastPanel = buyPanel[buyPanel.length - 1] || buyPanel;
-    if (lastPanel) {
-      let buyHtml = '';
-      const CHAIN_INFO = {
-        '1': { name: 'Ethereum', usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', solana: false },
-        '56': { name: 'BSC', usdc: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', solana: false },
-        '137': { name: 'Polygon', usdc: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', solana: false },
-        '196': { name: 'X Layer', usdc: '0x74b7F16337b8972027F6196A17a631aC6dE26d22', solana: false },
-        '8453': { name: 'Base', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', solana: false },
-        '501': { name: 'Solana', usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', solana: true },
-      };
-      for (const m of buyMatches) {
-        const token = m[1];
-        const address = m[2];
-        const chainId = m[3] || '196';
-        const chainInfo = CHAIN_INFO[chainId] || CHAIN_INFO['196'];
-        const usdcOnChain = chainInfo.usdc;
-        const uid = 'swap' + Date.now() + Math.random().toString(36).slice(2, 5);
-        const isSolana = chainInfo.solana;
-        const chainBadge = `<span style="font-size:.65rem;padding:1px 6px;background:rgba(139,92,246,.15);color:var(--accent);border-radius:4px;margin-left:4px">${chainInfo.name}</span>`;
-        const buyAction = isSolana
-          ? `<button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="alert('Solana 代币需要使用 OKX Wallet Solana 模式手动交易。点击复制地址：${address}');navigator.clipboard.writeText('${address}')">复制地址</button>`
-          : `<button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInputMultiChain('${uid}','${usdcOnChain}','${address}','${chainId}')">买入 ${token}</button>`;
-        buyHtml += `
-          <div style="margin-bottom:8px">
-            <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 ${token} ${chainBadge}（USDC → ${token}）</div>
-            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
-              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
-              <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
-              <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem" oninput="document.querySelectorAll('.swap-amt-btn[data-uid=${uid}]').forEach(b=>{b.style.borderColor='';b.style.color='var(--text)'})">
-              ${buyAction}
-            </div>
-          </div>`;
-      }
-      if (!buyHtml) {
-        // Fallback: default OKB buy buttons
-        const uid = 'swap' + Date.now();
-        buyHtml = `
-          <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">一键买入 OKB（USDC → OKB）</div>
-          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
-            <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
-            <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${USDC_ADDRESS}','0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')">买入 OKB</button>
-          </div>`;
-      }
-      if (lastPanel.innerHTML !== undefined) lastPanel.innerHTML = buyHtml;
-    }
-  }
-
-  // Save to history
-  saveToHistory(strategyId, data, customRule);
-
-  // Start 24/7 monitoring
-  if (strategyId !== 'custom') startMonitor(strategyId);
-
-  // Update positions
-  loadPositions();
-}
-
-// ── Dashboard: History + Positions ──
-
-function saveToHistory(strategyId, data, customRule) {
-  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
-  const names = { 'steady-yield': '稳健理财', 'smart-copy': '聪明钱跟单', 'custom': '自定义策略' };
-  history.unshift({
-    strategy: names[strategyId] || strategyId,
-    rule: customRule || '',
-    toolsUsed: data.toolsUsed || [],
-    result: data.result || data.answer || '',
-    txHash: data.payment?.transaction || null,
-    timestamp: new Date().toISOString(),
-  });
-  localStorage.setItem('autoyield_history', JSON.stringify(history.slice(0, 20)));
-}
-
-function renderHistory() {
-  const panel = document.getElementById('historyPanel');
-  if (!panel) return;
-  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
-  if (!history.length) { panel.innerHTML = '<p style="color:var(--muted);font-size:.85rem">还没有执行过策略。选一个策略开始吧!</p>'; return; }
-
-  panel.innerHTML = history.map((h, i) => `
-    <div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="expandHistory(${i})">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <span style="font-weight:600;font-size:.85rem">${h.strategy}</span>
-          <span style="color:var(--muted);font-size:.75rem;margin-left:8px">${new Date(h.timestamp).toLocaleString()}</span>
-        </div>
-        <div style="display:flex;gap:4px">
-          ${h.toolsUsed.slice(0, 3).map(t => '<span class="skill-tag">' + t + '</span>').join('')}
-          ${h.toolsUsed.length > 3 ? '<span class="skill-tag">+' + (h.toolsUsed.length - 3) + '</span>' : ''}
-        </div>
-      </div>
-      <div id="historyDetail${i}" style="display:none;margin-top:8px;font-size:.8rem;color:var(--text2);line-height:1.6;max-height:200px;overflow-y:auto">
-        ${renderMarkdown(h.result)}
-        ${h.txHash ? '<div style="margin-top:8px"><a href="https://www.okx.com/web3/explorer/xlayer/tx/' + h.txHash + '" target="_blank" style="color:var(--cyan);font-size:.75rem">查看链上交易</a></div>' : ''}
-      </div>
-    </div>
-  `).join('');
-}
-
-function expandHistory(i) {
-  const el = document.getElementById('historyDetail' + i);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-function clearHistory() {
-  localStorage.removeItem('autoyield_history');
-  renderHistory();
-  document.querySelectorAll('.chat-panel').forEach(p => p.innerHTML = '');
-  const emptyEl = document.getElementById('chatEmpty');
-  if (emptyEl) emptyEl.style.display = 'block';
-  showToast('历史已清空', 'success');
-}
-
-async function loadPositions() {
-  const panel = document.getElementById('positionsPanel');
-  const sidePanel = document.getElementById('sidebarPosContent');
-  if (!userAccount) {
-    if (panel) panel.innerHTML = '<p style="color:var(--muted)">请先连接钱包</p>';
-    return;
-  }
-  if (panel) panel.innerHTML = '<p style="color:var(--text2)">加载中...</p>';
-  if (sidePanel) sidePanel.innerHTML = '加载中...';
-
-  try {
-    const res = await fetch(AGENT_URL + '/api/strategy/status?address=' + userAccount);
-    const data = await res.json();
-
-    const portfolio = data.portfolio;
-    const positions = data.defiPositions;
-
-    let html = '';
-
-    if (portfolio?.data?.[0]) {
-      const total = portfolio.data[0].totalValue || '0';
-      html += '<div style="font-size:1.3rem;font-weight:700;color:var(--green);margin-bottom:12px">总资产: $' + Number(total).toFixed(2) + '</div>';
-    }
-
-    if (positions && positions.length > 0) {
-      html += '<div style="display:grid;gap:8px">';
-      for (const pos of positions.slice(0, 5)) {
-        html += '<div style="padding:10px;background:var(--bg);border-radius:8px;display:flex;justify-content:space-between;align-items:center">';
-        html += '<div><span style="font-weight:600;font-size:.85rem">' + (pos.platformName || 'DeFi') + '</span>';
-        html += '<span style="color:var(--muted);font-size:.75rem;margin-left:8px">' + (pos.chainName || 'X Layer') + '</span></div>';
-        html += '<div style="text-align:right"><div style="color:var(--green);font-weight:600">$' + Number(pos.totalValueUsd || 0).toFixed(2) + '</div></div>';
-        html += '</div>';
-      }
-      html += '</div>';
-      html += '<button class="btn btn-sm btn-primary" style="margin-top:12px;width:100%" onclick="runStrategy(\'steady-yield\')">AI 一键调仓分析 · $0.05</button>';
-    } else {
-      html += '<p style="color:var(--muted)">暂无 DeFi 仓位。运行策略后，AI 会推荐最优方案。</p>';
-      html += '<button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="document.getElementById(\'strategies\').scrollIntoView({behavior:\'smooth\'})">选择策略开始</button>';
-    }
-
-    if (panel) panel.innerHTML = html;
-    // Also update sidebar positions
-    if (sidePanel) {
-      if (portfolio?.data?.[0]) {
-        sidePanel.innerHTML = '<span style="color:var(--green);font-weight:600">$' + Number(portfolio.data[0].totalValue || 0).toFixed(2) + '</span>';
-        if (positions?.length) sidePanel.innerHTML += ' · ' + positions.length + ' 个协议';
-      } else {
-        sidePanel.innerHTML = '暂无仓位';
-      }
-    }
-  } catch (err) {
-    if (panel) panel.innerHTML = '<p style="color:var(--muted)">加载失败: ' + err.message + '</p>';
-    if (sidePanel) sidePanel.innerHTML = '加载失败';
-  }
-}
-
-function toggleDashboard() {
-  const dash = document.getElementById('dashboard');
-  const isHidden = dash.style.display === 'none';
-  dash.style.display = isHidden ? 'block' : 'none';
-  if (isHidden) showDashboard();
-  dash.scrollIntoView({ behavior: 'smooth' });
-}
-
-function showDashboard() {
-  renderHistory();
-  loadPositions();
-}
-
-// Swap amount selection
-function selectSwapAmount(btn, uid, amount) {
-  // Deselect all buttons in this group
-  document.querySelectorAll('.swap-amt-btn[data-uid="' + uid + '"]').forEach(b => {
-    b.style.borderColor = '';
-    b.style.color = 'var(--text)';
-  });
-  // Select this button
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.color = 'var(--accent)';
-  // Set value in input
-  const input = document.getElementById('input-' + uid);
-  if (input) input.value = amount;
-}
-
-function executeSwapFromInput(uid, fromToken, toToken) {
-  const input = document.getElementById('input-' + uid);
-  const amount = parseFloat(input?.value || '0');
-  if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
-  executeSwap(fromToken, toToken, String(Math.round(amount * 1e6)));
-}
-
-async function executeSwapFromInputMultiChain(uid, fromToken, toToken, chainId) {
-  const input = document.getElementById('input-' + uid);
-  const amount = parseFloat(input?.value || '0');
-  if (!amount || amount <= 0) { showToast('请选择或输入金额', 'error'); return; }
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-
-  const provider = window._provider || getProvider();
-
-  // Switch to target chain
-  const chainHex = '0x' + parseInt(chainId).toString(16);
-  try {
-    showToast('切换到 chain ' + chainId + '...', 'success');
-    await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: chainHex }] });
-  } catch (switchErr) {
-    if (switchErr.code === 4902) {
-      // Chain not added — try to add common chains
-      const chainConfigs = {
-        '1': { chainId: '0x1', chainName: 'Ethereum', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://eth.llamarpc.com'], blockExplorerUrls: ['https://etherscan.io'] },
-        '56': { chainId: '0x38', chainName: 'BSC', nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }, rpcUrls: ['https://bsc-dataseed.binance.org'], blockExplorerUrls: ['https://bscscan.com'] },
-        '137': { chainId: '0x89', chainName: 'Polygon', nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }, rpcUrls: ['https://polygon-rpc.com'], blockExplorerUrls: ['https://polygonscan.com'] },
-        '8453': { chainId: '0x2105', chainName: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: ['https://basescan.org'] },
-      };
-      const cfg = chainConfigs[chainId];
-      if (cfg) {
-        try { await provider.request({ method: 'wallet_addEthereumChain', params: [cfg] }); }
-        catch (addErr) { showToast('添加链失败: ' + addErr.message, 'error'); return; }
-      }
-    } else {
-      showToast('切链失败: ' + switchErr.message, 'error'); return;
-    }
-  }
-
-  // Get swap calldata for the target chain
-  showToast('获取交易路径...', 'success');
-  const amountRaw = String(Math.round(amount * 1e6));
-  try {
-    const res = await fetch(AGENT_URL + '/api/execute/swap?from=' + fromToken + '&to=' + toToken + '&amount=' + amountRaw + '&wallet=' + userAccount + '&chain=' + chainId);
-    const data = await res.json();
-    if (!data.success) { showToast('交易路径获取失败: ' + (data.error || ''), 'error'); return; }
-
-    showToast('确认交易 $' + amount + '...', 'success');
-    const txHash = await provider.request({
-      method: 'eth_sendTransaction',
-      params: [{ from: userAccount, to: data.tx.to, data: data.tx.data, value: data.tx.value || '0x0' }],
-    });
-    showToast('交易已提交! TX: ' + txHash.slice(0, 10) + '...', 'success');
-
-    const chatDiv = document.getElementById('chatPanel-' + activeTab);
-    if (chatDiv) {
-      chatDiv.innerHTML += `
-        <div class="chat-msg chat-msg-user">
-          <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
-          <div class="body">买入 $${amount} (chain ${chainId})</div>
-          <div class="meta">TX: ${txHash.slice(0, 18)}...</div>
-        </div>`;
-      document.getElementById('sidebarBody').scrollTop = document.getElementById('sidebarBody').scrollHeight;
-    }
-  } catch (err) {
-    if (err.code === 4001) { showToast('交易已取消', 'error'); }
-    else { showToast('交易失败: ' + err.message, 'error'); }
-  }
-}
-
-// One-click Aave deposit
-async function executeDefi(uid) {
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-  const input = document.getElementById('input-' + uid);
-  const amountUsd = parseFloat(input?.value || '0');
-  if (!amountUsd || amountUsd <= 0) { showToast('请选择或输入金额', 'error'); return; }
-
-  const provider = window._provider || getProvider();
-  const amountRaw = String(Math.round(amountUsd * 1e6)); // USDC 6 decimals
-
-  showToast('获取 Aave 存入交易...', 'success');
-
-  try {
-    const res = await fetch(AGENT_URL + '/api/execute/defi?wallet=' + userAccount + '&token=USDC&amount=' + amountRaw);
-    const data = await res.json();
-
-    if (data.success && data.tx) {
-      showToast('确认存入 $' + amountUsd + ' USDC 到 Aave...', 'success');
-      const txHash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: userAccount, to: data.tx.to, data: data.tx.data, value: data.tx.value || '0x0' }],
+      // Step 1: Request, get 402
+      let res = await fetch(`${API}/api/strategy/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategyId: 'custom', rule }),
       });
-      showToast('存入成功! TX: ' + txHash.slice(0, 10) + '...', 'success');
 
-      const chatDiv = document.getElementById('chatPanel-' + activeTab);
-      if (chatDiv) {
-        chatDiv.innerHTML += `
-          <div class="chat-msg chat-msg-user">
-            <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
-            <div class="body">存入 $${amountUsd} USDC 到 Aave</div>
-            <div class="meta"><a href="https://www.okx.com/web3/explorer/xlayer/tx/${txHash}" target="_blank" style="color:var(--cyan);text-decoration:none">查看交易</a></div>
-          </div>`;
-        document.getElementById('sidebarBody').scrollTop = document.getElementById('sidebarBody').scrollHeight;
-      }
-    } else {
-      // Fallback: open Aave
-      showToast('通过 Aave 网站存入...', 'success');
-      window.open(data.fallbackUrl || 'https://app.aave.com/?marketName=proto_xlayer_v3', '_blank');
-    }
-  } catch (err) {
-    if (err.code === 4001) { showToast('交易已取消', 'error'); }
-    else { showToast('失败: ' + err.message, 'error'); }
-  }
-}
-
-// One-click LP execution
-async function executeLp(uid) {
-  const input = document.getElementById('input-' + uid);
-  const amount = input?.value || '10';
-  if (!amount || parseFloat(amount) <= 0) { showToast('请选择或输入金额', 'error'); return; }
-
-  showToast('生成 LP 链接...', 'success');
-  try {
-    const res = await fetch(AGENT_URL + '/api/execute/lp?tokenA=NATIVE&tokenB=0x74b7F16337b8972027F6196A17a631aC6dE26d22&fee=3000&amount=' + amount);
-    const data = await res.json();
-    if (data.success && data.url) {
-      window.open(data.url, '_blank');
-      showToast('已打开 Uniswap，确认添加 LP', 'success');
-    } else {
-      showToast('生成失败', 'error');
-    }
-  } catch (err) {
-    showToast('失败: ' + err.message, 'error');
-  }
-}
-
-// One-click swap execution
-async function executeSwap(fromToken, toToken, amount) {
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-  const provider = window._provider || getProvider();
-
-  showToast('获取最优交易路径...', 'success');
-
-  try {
-    // Get calldata from backend
-    const res = await fetch(AGENT_URL + '/api/execute/swap?from=' + fromToken + '&to=' + toToken + '&amount=' + amount + '&wallet=' + userAccount);
-    const data = await res.json();
-
-    if (!data.success) { showToast('交易路径获取失败: ' + (data.error || ''), 'error'); return; }
-
-    const amountUsd = (Number(amount) / 1e6).toFixed(0);
-    showToast('确认交易 $' + amountUsd + '...', 'success');
-
-    // User signs the transaction
-    const txHash = await provider.request({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: userAccount,
-        to: data.tx.to,
-        data: data.tx.data,
-        value: data.tx.value,
-      }],
-    });
-
-    showToast('交易已提交! TX: ' + txHash.slice(0, 10) + '...', 'success');
-
-    // Add to chat
-    const chatDiv = document.getElementById('chatPanel-' + activeTab);
-    if (chatDiv) {
-      chatDiv.innerHTML += `
-        <div class="chat-msg chat-msg-user">
-          <div class="label user-label">你 · ${new Date().toLocaleTimeString()}</div>
-          <div class="body">一键买入 $${amountUsd}</div>
-          <div class="meta">
-            <a href="https://www.okx.com/web3/explorer/xlayer/tx/${txHash}" target="_blank" style="color:var(--cyan);text-decoration:none">查看交易 ${txHash.slice(0,10)}...</a>
-          </div>
-        </div>`;
-      const body = document.getElementById('sidebarBody');
-      body.scrollTop = body.scrollHeight;
-    }
-  } catch (err) {
-    if (err.code === 4001) { showToast('交易已取消', 'error'); }
-    else { showToast('交易失败: ' + err.message, 'error'); }
-  }
-}
-
-// Send free-form question
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const question = input?.value?.trim();
-  if (!question) return;
-  if (!userAccount) { showToast('请先连接钱包', 'error'); connectWallet(); return; }
-
-  input.value = '';
-  const provider = window._provider || getProvider();
-  const time = new Date().toLocaleTimeString();
-
-  // Show user message in current tab
-  const emptyEl = document.getElementById('chatEmpty');
-  if (emptyEl) emptyEl.style.display = 'none';
-  const chatDiv = document.getElementById('chatPanel-' + activeTab);
-  if (!chatDiv) return;
-
-  chatDiv.innerHTML += `
-    <div class="chat-msg chat-msg-user">
-      <div class="label user-label">你 · ${time}</div>
-      <div class="body">${question}</div>
-    </div>
-    <div class="chat-msg chat-msg-agent" id="chatLoading">
-      <div class="label agent-label">AutoYield AI</div>
-      <div class="body" style="display:flex;align-items:center;gap:8px">
-        <div class="loading-spinner" style="width:16px;height:16px;border-width:2px;flex-shrink:0"></div>
-        <span style="color:var(--text2)">思考中...</span>
-      </div>
-    </div>`;
-  const body = document.getElementById('sidebarBody');
-  body.scrollTop = body.scrollHeight;
-
-  try {
-    // x402 sign
-    const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const validBefore = Math.floor(Date.now() / 1000) + 300;
-    const msgParams = JSON.stringify({
-      types: {
-        EIP712Domain: [{ name: 'name', type: 'string' },{ name: 'version', type: 'string' },{ name: 'chainId', type: 'uint256' },{ name: 'verifyingContract', type: 'address' }],
-        TransferWithAuthorization: [{ name: 'from', type: 'address' },{ name: 'to', type: 'address' },{ name: 'value', type: 'uint256' },{ name: 'validAfter', type: 'uint256' },{ name: 'validBefore', type: 'uint256' },{ name: 'nonce', type: 'bytes32' }],
-      },
-      primaryType: 'TransferWithAuthorization',
-      domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: USDC_ADDRESS },
-      message: { from: userAccount, to: AGENT_ADDRESS, value: '20000', validAfter: '0', validBefore: String(validBefore), nonce },
-    });
-    const signature = await provider.request({ method: 'eth_signTypedData_v4', params: [userAccount, msgParams] });
-    const paymentPayload = { x402Version: 1, scheme: 'exact', network: 'eip155:196', payload: { signature, authorization: { from: userAccount, to: AGENT_ADDRESS, value: '20000', validAfter: '0', validBefore: String(validBefore), nonce } } };
-
-    const res = await fetch(AGENT_URL + '/api/ask?q=' + encodeURIComponent(question), {
-      headers: { 'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)) },
-    });
-    const data = await res.json();
-
-    const loadEl = document.getElementById('chatLoading'); if (loadEl) loadEl.remove();
-
-    const resultText = data.answer || data.result || JSON.stringify(data, null, 2);
-    const toolsHtml = (data.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
-
-    chatDiv.innerHTML += `
-      <div class="chat-msg chat-msg-agent">
-        <div class="label agent-label">AutoYield AI · ${new Date().toLocaleTimeString()}</div>
-        <div class="body">${renderMarkdown(resultText)}</div>
-        <div class="meta" style="margin-top:6px">${toolsHtml}</div>
-      </div>`;
-    body.scrollTop = body.scrollHeight;
-
-    // Save (follow-up chat, no rule — just save the result)
-    saveToHistory(activeTab === 'smart-copy' ? '聪明钱跟单' : activeTab === 'custom' ? '自定义策略' : '稳健理财', { ...data, result: resultText });
-  } catch (err) {
-    const loadEl = document.getElementById('chatLoading'); if (loadEl) loadEl.remove();
-    if (err.code === 4001) { showToast('签名已取消', 'error'); }
-    else { showToast('失败: ' + err.message, 'error'); }
-  }
-}
-
-// ── 24/7 Monitor ──
-
-let monitorActive = false;
-let monitorInterval = null;
-
-async function startMonitor(strategy) {
-  if (!userAccount || monitorActive) return;
-  try {
-    const res = await fetch(AGENT_URL + '/api/monitor/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet: userAccount, strategy }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      monitorActive = true;
-      showToast('24/7 监控已启动', 'success');
-      const stopBtn = document.getElementById('stopMonitorBtn');
-      if (stopBtn) stopBtn.style.display = 'inline-block';
-      // Update sidebar positions area
-      const posContent = document.getElementById('sidebarPosContent');
-      if (posContent) posContent.innerHTML = '<span style="color:var(--green)">● 监控中</span> ' + (strategy === 'steady-yield' ? '稳健理财' : '聪明钱跟单');
-      // Start polling for alerts
-      monitorInterval = setInterval(pollAlerts, 15000);
-    }
-  } catch (err) { console.log('Monitor start failed:', err.message); }
-}
-
-async function stopMonitor() {
-  if (!userAccount) return;
-  try {
-    await fetch(AGENT_URL + '/api/monitor/stop', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet: userAccount }),
-    });
-  } catch {}
-  monitorActive = false;
-  if (monitorInterval) clearInterval(monitorInterval);
-  const posContent = document.getElementById('sidebarPosContent');
-  if (posContent) posContent.innerHTML = '监控已停止';
-  showToast('监控已停止', 'success');
-}
-
-async function pollAlerts() {
-  if (!userAccount || !monitorActive) return;
-  try {
-    const res = await fetch(AGENT_URL + '/api/monitor/alerts?wallet=' + userAccount);
-    const data = await res.json();
-    if (!data.alerts?.length) return;
-
-    for (const alert of data.alerts) {
-      // Show alert in current tab
-      const chatDiv = document.getElementById('chatPanel-' + activeTab);
-      if (!chatDiv) continue;
-
-      const emptyEl = document.getElementById('chatEmpty');
-      if (emptyEl) emptyEl.style.display = 'none';
-
-      let actionHtml = '';
-      if (alert.action?.type === 'swap' && alert.action.toToken) {
-        const uid = 'alert' + alert.id;
-        actionHtml = `
-          <div style="margin-top:8px;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','10')">$10</button>
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','50')">$50</button>
-            <button class="btn btn-sm btn-outline swap-amt-btn" data-uid="${uid}" style="font-size:.7rem" onclick="selectSwapAmount(this,'${uid}','100')">$100</button>
-            <input id="input-${uid}" type="number" placeholder="自定义" min="1" style="width:70px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem">
-            <button class="btn btn-sm btn-primary" style="font-size:.7rem" onclick="executeSwapFromInput('${uid}','${alert.action.fromToken}','${alert.action.toToken}')">买入</button>
-          </div>`;
-      } else if (alert.action?.url) {
-        actionHtml = `<a href="${alert.action.url}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;font-size:.7rem;margin-top:8px;display:inline-block">去执行</a>`;
+      if (res.status !== 402) {
+        const data = await res.json();
+        resultArea.innerHTML = '✅ 结果:\n\n' + (data.result || JSON.stringify(data, null, 2));
+        return;
       }
 
-      chatDiv.innerHTML += `
-        <div class="chat-msg chat-msg-agent" style="border-left:3px solid var(--yellow)">
-          <div class="label" style="color:var(--yellow)">● 实时提醒 · ${new Date(alert.timestamp).toLocaleTimeString()}</div>
-          <div class="body">
-            <strong>${alert.title}</strong><br>${alert.message}
-            ${actionHtml}
-          </div>
-        </div>`;
+      const header = res.headers.get('PAYMENT-REQUIRED');
+      const requirements = JSON.parse(atob(header));
+      const accept = requirements.accepts[0];
 
-      const body = document.getElementById('sidebarBody');
-      body.scrollTop = body.scrollHeight;
+      resultArea.innerHTML = '✍️  请在钱包中签名 EIP-3009 授权 $0.05 USDC...\n(这不会立即花钱，只是授权 OKX Facilitator 代执行一次转账)\n';
 
-      showToast('新提醒: ' + alert.title, 'success');
+      // Step 2: Sign EIP-3009
+      const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+      const validBefore = Math.floor(Date.now() / 1000) + 3600;
+      const typedData = {
+        types: {
+          EIP712Domain: [
+            { name: 'name', type: 'string' },
+            { name: 'version', type: 'string' },
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
+          TransferWithAuthorization: [
+            { name: 'from', type: 'address' },
+            { name: 'to', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'validAfter', type: 'uint256' },
+            { name: 'validBefore', type: 'uint256' },
+            { name: 'nonce', type: 'bytes32' },
+          ],
+        },
+        primaryType: 'TransferWithAuthorization',
+        domain: { name: 'USD Coin', version: '2', chainId: 196, verifyingContract: accept.asset },
+        message: {
+          from, to: accept.payTo, value: accept.maxAmountRequired,
+          validAfter: 0, validBefore, nonce,
+        },
+      };
+
+      const signature = await window.ethereum.request({
+        method: 'eth_signTypedData_v4',
+        params: [from, JSON.stringify(typedData)],
+      });
+
+      const payload = {
+        x402Version: requirements.x402Version || 1,
+        scheme: accept.scheme || 'exact',
+        network: accept.network || 'eip155:196',
+        payload: {
+          signature,
+          authorization: {
+            from, to: accept.payTo, value: String(accept.maxAmountRequired),
+            validAfter: '0', validBefore: String(validBefore), nonce,
+            asset: accept.asset,
+          },
+        },
+      };
+
+      resultArea.innerHTML = '🔄 AI 正在分析（约 45-70 秒）...\n';
+
+      // Step 3: Replay
+      res = await fetch(`${API}/api/strategy/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PAYMENT': btoa(JSON.stringify(payload)),
+        },
+        body: JSON.stringify({ strategyId: 'custom', rule }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        resultArea.innerHTML = '❌ 错误: ' + JSON.stringify(data, null, 2);
+        return;
+      }
+
+      const txLink = data.payment?.transaction
+        ? `\n🔗 x402 tx: https://www.okx.com/web3/explorer/xlayer/tx/${data.payment.transaction}`
+        : '';
+
+      resultArea.innerHTML = `✅ AI Meme Hunter 结果\n${'━'.repeat(50)}\n\n${data.result || '(no result)'}\n\n${'━'.repeat(50)}\n💳 已支付 $0.05 USDC${txLink}`;
+    } catch (err) {
+      resultArea.innerHTML = '❌ 错误: ' + (err.message || err);
     }
-  } catch (err) { console.log('Poll alerts:', err.message); }
-}
-
-// Restore chat history from localStorage on page load
-function restoreHistory() {
-  const history = JSON.parse(localStorage.getItem('autoyield_history') || '[]');
-  if (!history.length) return;
-  const emptyEl = document.getElementById('chatEmpty');
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  // Group by strategy
-  const grouped = {};
-  for (const h of history.reverse()) {
-    const stratMap = { '稳健理财': 'steady-yield', '聪明钱跟单': 'smart-copy', '自定义策略': 'custom' };
-    const tabId = stratMap[h.strategy] || 'custom';
-    if (!grouped[tabId]) grouped[tabId] = [];
-    grouped[tabId].push(h);
-  }
-
-  for (const [tabId, items] of Object.entries(grouped)) {
-    const panel = document.getElementById('chatPanel-' + tabId);
-    if (!panel) continue;
-    for (const h of items) {
-      const time = new Date(h.timestamp).toLocaleTimeString();
-      const toolsHtml = (h.toolsUsed || []).map(t => '<span class="skill-tag">' + t + '</span>').join(' ');
-      const userBody = (tabId === 'custom' && h.rule)
-        ? `<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">执行自定义策略</div><div style="white-space:pre-wrap">${h.rule.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
-        : `执行${h.strategy}分析`;
-      panel.innerHTML += `
-        <div class="chat-msg chat-msg-user">
-          <div class="label user-label">你 · ${time}</div>
-          <div class="body">${userBody}</div>
-          ${h.txHash ? '<div class="meta"><a href="https://www.okx.com/web3/explorer/xlayer/tx/' + h.txHash + '" target="_blank" style="color:var(--cyan);text-decoration:none">链上记录</a></div>' : ''}
-        </div>
-        <div class="chat-msg chat-msg-agent">
-          <div class="label agent-label">AutoYield AI · ${time}</div>
-          <div class="body">${renderMarkdown(h.result || '')}</div>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap">
-            ${getActionButtons(tabId)}
-            <button class="btn btn-sm btn-outline" style="font-size:.7rem" onclick="runStrategy('${tabId}')">再次分析 · $0.05</button>
-          </div>
-          <div class="meta" style="margin-top:6px">${toolsHtml}</div>
-        </div>`;
-    }
-  }
-
-  // Show the tab that has the most recent message
-  if (history.length) {
-    const latest = history[history.length - 1];
-    const stratMap = { '稳健理财': 'steady-yield', '聪明钱跟单': 'smart-copy', '自定义策略': 'custom' };
-    switchTab(stratMap[latest.strategy] || 'steady-yield');
-  }
-}
-
-// Init
-restoreHistory();
-loadStrategies();
-const _initProvider = getProvider();
-if (_initProvider) {
-  _initProvider.on('accountsChanged', (accounts) => {
-    userAccount = accounts[0] || null;
-    document.getElementById('connectBtn').textContent = userAccount ? userAccount.slice(0,6)+'...'+userAccount.slice(-4) : 'Connect Wallet';
   });
-}
 </script>
+
 </body>
 </html>

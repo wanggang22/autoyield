@@ -21,7 +21,7 @@ metadata:
 
 ```
 MCP 入口: meme_scan (自然语言 → $0.05 USDC x402)
-  └── AI Agent 编排层 (Claude Haiku 4.5, 最多20轮并行工具调用)
+  └── AI Agent 编排层 (Claude Sonnet 4, 最多20轮并行工具调用)
        ├── get_meme_tokens    — OKX DEX Trenches API (热门meme币列表)
        ├── get_signals         — OKX Signal API (聪明钱/鲸鱼买入信号)
        ├── get_token_info      — OKX Token API (价格/市值/24h成交量)
