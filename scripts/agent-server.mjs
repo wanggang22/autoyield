@@ -1809,17 +1809,19 @@ app.get('/api/arb-scan', x402Guard('/api/arb-scan'), async (req, res) => {
     if (okx.toHuman && uni.toHuman) {
       const diff = Math.abs(okx.toHuman - uni.toHuman);
       const avg = (okx.toHuman + uni.toHuman) / 2;
-      const spreadPct = (diff / avg * 100).toFixed(4);
+      const spreadPct = diff / avg;  // 比例（不是 %）
       const better = okx.toHuman > uni.toHuman ? 'OKX' : 'Uniswap';
       const worse = okx.toHuman > uni.toHuman ? 'Uniswap' : 'OKX';
-      const profit = diff * (amountUSDC / avg); // 粗略套利空间估算
+      // 套利毛利 ≈ 价差比例 × 名义本金（以 USDC 计）
+      // 套利思路：在更便宜的 DEX 买，在更贵的 DEX 卖，理论获利 spread × 本金
+      const grossProfitUSD = spreadPct * amountUSDC;
       arbitrage = {
-        spread: `${spreadPct}%`,
+        spread: `${(spreadPct * 100).toFixed(4)}%`,
         spreadAbs: diff.toFixed(8) + ' ' + toSym,
         better: `${better} gives more output`,
         strategy: `Buy ${toSym} on ${worse}, sell on ${better}`,
-        estimatedGrossProfit: `$${(profit * amountUSDC / avg).toFixed(4)} per ${amountUSDC} ${fromSym}`,
-        note: 'Gross only — actual profit must deduct gas fees (~$5-30) and MEV risk',
+        estimatedGrossProfitUSD: `$${grossProfitUSD.toFixed(4)} per ${amountUSDC} ${fromSym} round-trip`,
+        note: 'Gross only — actual profit must deduct round-trip gas (~$5-30) + MEV risk. Profitable only when spread > ~0.5-1% for typical trade sizes.',
       };
     }
 
