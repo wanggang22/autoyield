@@ -2164,7 +2164,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
     let response;
     try {
       response = await claude.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 8192,
         system: strategySkillPrompt,
         tools: ASK_TOOLS,
@@ -2176,7 +2176,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
         await new Promise(r => setTimeout(r, 5000));
         try {
           response = await claude.messages.create({
-            model: 'claude-haiku-4-5-20251001',
+            model: 'claude-sonnet-4-20250514',
             max_tokens: 8192,
             system: SKILL_SYSTEM_PROMPT,
             tools: ASK_TOOLS,
@@ -2222,7 +2222,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
     try {
       messages.push({ role: 'user', content: '基于以上工具调用的所有数据，直接给出最终的中文分析结果和建议。不要再调用工具，只输出文字总结。' });
       const summaryResp = await claude.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 8192,
         system: strategySkillPrompt,
         messages,
