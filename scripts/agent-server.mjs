@@ -2162,6 +2162,34 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
   let messages = [{ role: 'user', content: prompt }];
   let finalAnswer = '';
 
+  // 服务端预调工具：steady-yield 固定调用 5 个工具，强制保证 Skills 使用
+  if (strategyId === 'steady-yield') {
+    log(`  Pre-fetching 5 tools for steady-yield...`);
+    const USDC_XLAYER = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
+    const ETH_XLAYER = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+    const preCalls = [
+      { name: 'defi_search_xlayer', exec: () => executeAskTool('defi_search', { chain: '196', token: 'USDC', product_group: 'SINGLE_EARN' }) },
+      { name: 'get_yield_data',     exec: () => executeAskTool('get_yield_data', {}) },
+      { name: 'get_pool_data',      exec: () => executeAskTool('get_pool_data', { token_address: USDC_XLAYER, network: 'xlayer' }) },
+      { name: 'defi_search_eth',    exec: () => executeAskTool('defi_search', { chain: '1', token: 'USDC', product_group: 'SINGLE_EARN' }) },
+      { name: 'dual_engine_quote',  exec: () => executeAskTool('dual_engine_quote', { from_token: USDC_XLAYER, to_token: ETH_XLAYER, amount: '1000000000' }) },
+    ];
+    const preResults = await Promise.all(preCalls.map(async c => {
+      try {
+        const r = await c.exec();
+        allToolsUsed.push(c.name);
+        try { allToolData[c.name] = JSON.parse(r); } catch { allToolData[c.name] = r; }
+        return `### ${c.name}\n${r.slice(0, 3000)}`;
+      } catch (err) { return `### ${c.name}\nError: ${err.message}`; }
+    }));
+    log(`  Pre-fetched ${preResults.length} tools. Now AI synthesizes.`);
+
+    messages = [{
+      role: 'user',
+      content: `${prompt}\n\n【已预先获取的工具数据 — 直接用这些数据综合输出，不需要再调用工具】\n\n${preResults.join('\n\n')}`,
+    }];
+  }
+
   for (let round = 0; round < MAX_ROUNDS; round++) {
     log(`  Strategy ${strategyId} round ${round + 1}...`);
     let response;
