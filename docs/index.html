@@ -297,6 +297,145 @@ body{margin-right:50vw}
   </div>
 </section>
 
+<!-- Integration Methods -->
+<section style="padding:60px 0;border-top:1px solid var(--border)">
+  <div class="container">
+    <h2 style="text-align:center;font-size:1.5rem;margin-bottom:8px">三种接入方式</h2>
+    <p style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:32px">同一套 AI 能力，按你的场景选用。每次调用 $0.05 USDC（x402 自动支付，零 gas）。</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+
+      <!-- 方式 1: 网页前端 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:1.4rem">🌐</span>
+          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">网页前端</h3>
+        </div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
+          普通用户最简单的方式。打开网页 → 连 OKX Wallet → 选策略 → 自动付费。
+        </div>
+        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px">
+          <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">访问</div>
+          <code style="font-size:.75rem;color:var(--cyan);word-break:break-all">autoyield-eight.vercel.app</code>
+        </div>
+        <ul style="color:var(--text2);font-size:.78rem;padding-left:16px;margin:0;line-height:1.7">
+          <li>三种预设策略：稳健理财 / 聪明钱跟单 / 自定义</li>
+          <li>支持 OKX Wallet、MetaMask</li>
+          <li>结果直接显示在浏览器</li>
+        </ul>
+      </div>
+
+      <!-- 方式 2: MCP + Claude Code -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:1.4rem">🤖</span>
+          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">MCP for Claude Code / Cursor</h3>
+        </div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
+          AI 编程工具用户。一句自然语言，AI 自动调用工具并付费。
+        </div>
+        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px;font-size:.7rem;color:var(--cyan);overflow-x:auto;white-space:pre">{
+  "mcpServers": {
+    "autoyield-meme": {
+      "command": "npx",
+      "args": ["-y", "autoyield-meme-scanner"],
+      "env": {
+        "AGENT_PRIVATE_KEY": "your-key"
+      }
+    }
+  }
+}</div>
+        <div style="margin-bottom:8px">
+          <span style="font-size:.7rem;color:var(--muted)">配完后说话：</span>
+        </div>
+        <div style="background:rgba(139,92,246,.1);padding:10px;border-radius:6px;font-size:.78rem;color:var(--text)">
+          "找 Solana 上市值 50K-300K 的 meme 币"
+        </div>
+        <div style="margin-top:12px;font-size:.7rem;color:var(--muted)">
+          npm: <code style="color:var(--cyan)">autoyield-meme-scanner</code>
+        </div>
+      </div>
+
+      <!-- 方式 3: HTTP API + GitHub Actions -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:1.4rem">⚙️</span>
+          <h3 style="font-size:1.05rem;margin:0;color:var(--accent)">HTTP API + 定时任务</h3>
+        </div>
+        <div style="color:var(--text2);font-size:.85rem;line-height:1.6;margin-bottom:16px">
+          开发者 / Bot 用户。直接调 HTTP API + 自己处理 x402 签名，可定时跑、推送 Telegram / Discord。
+        </div>
+        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:6px;margin-bottom:12px;font-size:.7rem;color:var(--cyan);overflow-x:auto;white-space:pre">POST /api/strategy/start
+Header: X-PAYMENT (x402 base64)
+Body: {
+  "strategyId": "custom",
+  "rule": "你的指令"
+}</div>
+        <ul style="color:var(--text2);font-size:.78rem;padding-left:16px;margin:0;line-height:1.7">
+          <li>EIP-3009 签名 USDC 付费（自己实现）</li>
+          <li>示例代码：Python / Node.js</li>
+          <li>典型场景：每日定时扫 → 推 Telegram</li>
+        </ul>
+        <div style="margin-top:12px;font-size:.7rem;color:var(--muted)">
+          参考实现: <code style="color:var(--cyan)">github.com/wanggang22/bankr-meme-monitor</code>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Comparison Table -->
+    <div style="margin-top:32px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;overflow-x:auto">
+      <h3 style="font-size:.95rem;margin:0 0 12px 0;color:var(--accent)">对比</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;color:var(--text2)">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);color:var(--text)">
+            <th style="text-align:left;padding:8px 12px">维度</th>
+            <th style="text-align:left;padding:8px 12px">网页</th>
+            <th style="text-align:left;padding:8px 12px">MCP</th>
+            <th style="text-align:left;padding:8px 12px">HTTP API</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;color:var(--muted)">目标用户</td>
+            <td style="padding:8px 12px">普通用户</td>
+            <td style="padding:8px 12px">AI 工具用户</td>
+            <td style="padding:8px 12px">开发者 / Bot</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;color:var(--muted)">门槛</td>
+            <td style="padding:8px 12px">连钱包</td>
+            <td style="padding:8px 12px">配 5 行 JSON</td>
+            <td style="padding:8px 12px">写代码</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;color:var(--muted)">x402 付费</td>
+            <td style="padding:8px 12px">浏览器签名</td>
+            <td style="padding:8px 12px">自动</td>
+            <td style="padding:8px 12px">自己实现</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;color:var(--muted)">输出</td>
+            <td style="padding:8px 12px">UI 卡片</td>
+            <td style="padding:8px 12px">AI 对话</td>
+            <td style="padding:8px 12px">JSON / 自定义</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;color:var(--muted)">典型场景</td>
+            <td style="padding:8px 12px">即兴查询</td>
+            <td style="padding:8px 12px">研发工作流</td>
+            <td style="padding:8px 12px">定时推送</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;padding:16px;background:rgba(139,92,246,.06);border-radius:var(--radius);font-size:.85rem;color:var(--text2)">
+      底层都是同一套 API：<code style="color:var(--cyan)">/api/strategy/start</code> + Claude AI 编排 8 个 OKX OnchainOS 工具
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="container">
     <div class="footer-brand">AutoYield</div>
