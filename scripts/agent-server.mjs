@@ -445,13 +445,19 @@ async function dualEngineQuote(fromToken, toToken, amount) {
 
   const comparison = { okx: null, uniswap: null, recommendation: null, reason: '' };
 
-  if (okxResult?.data?.[0]) {
-    const d = okxResult.data[0];
+  // getSwapQuote 已经 unwrap 返回 data[0]，okxResult 就是 data[0] 本身
+  if (okxResult) {
     comparison.okx = {
-      toAmount: d.toTokenAmount,
-      priceImpact: d.priceImpactPercentage,
-      gas: d.estimateGasFee,
-      routerAddress: d.routerAddress,
+      fromTokenAmount: okxResult.fromTokenAmount,
+      toAmount: okxResult.toTokenAmount,
+      priceImpact: okxResult.priceImpactPercentage,
+      gas: okxResult.estimateGasFee,
+      routerAddress: okxResult.routerAddress,
+      fromTokenDecimal: okxResult.fromToken?.decimal,
+      toTokenDecimal: okxResult.toToken?.decimal,
+      fromTokenSymbol: okxResult.fromToken?.symbol,
+      toTokenSymbol: okxResult.toToken?.symbol,
+      dexRouterList: okxResult.dexRouterList,
     };
   }
 
@@ -2101,10 +2107,12 @@ D. Swap 路径推荐
 
 诚实告诉用户：基于**真实工具数据**，什么金额下跨链值得，举例 $1k / $10k / $100k 的回本周期。
 
-## 💱 D. Swap 路径推荐
-基于 okx_swap_quote (OKX DEX Aggregator，聚合 500+ 流动性源，已包含 Uniswap)。
-展示 USDC→ETH 的 OKX 报价、预期滑点、路径信息。
-不要提"Uniswap 引擎"、"双引擎"——现在只用 OKX。
+## 💱 D. Swap 路径推荐（双引擎对比）
+基于 dual_engine_quote。展示 USDC→WETH (1000 USDC) 的双引擎报价：
+- OKX DEX Aggregator（聚合 500+ 流动性源）
+- Uniswap Trading API（直接 V2/V3/V4）
+
+比较两个引擎的：输出金额、价格影响、路径。**推荐用哪个引擎**及原因。
 
 ## 🎯 最终建议
 "如果你有 \$X，建议..." 给出明确步骤。
@@ -2202,7 +2210,7 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
       { name: 'get_yield_data',     exec: () => executeAskTool('get_yield_data', {}) },
       { name: 'get_pool_data',      exec: () => executeAskTool('get_pool_data', { token_address: USDC_XLAYER, network: 'xlayer' }) },
       { name: 'defi_search_eth',    exec: () => executeAskTool('defi_search', { chain: '1', token: 'USDC', product_group: 'SINGLE_EARN' }) },
-      { name: 'okx_swap_quote',     exec: () => executeAskTool('get_swap_quote', { chain: '196', from_token: USDC_XLAYER, to_token: WETH_XLAYER, amount: '1000000000' }) },
+      { name: 'dual_engine_quote',  exec: () => executeAskTool('dual_engine_quote', { from_token: USDC_XLAYER, to_token: WETH_XLAYER, amount: '1000000000' }) },
     ];
     const preResults = await Promise.all(preCalls.map(async c => {
       try {
@@ -2211,22 +2219,27 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
         let parsed;
         try { parsed = JSON.parse(r); allToolData[c.name] = parsed; } catch { allToolData[c.name] = r; }
 
-        // swap quote 单位预处理：把 wei 转成人类可读数字，避免 AI 看 raw 数据搞错
-        if (c.name === 'okx_swap_quote' && parsed && !parsed.error) {
-          const fromAmt = parsed.fromTokenAmount || '1000000000';
-          const toAmt = parsed.toTokenAmount || '0';
-          const fromDec = Number(parsed.fromToken?.decimal || 6);
-          const toDec = Number(parsed.toToken?.decimal || 18);
-          const fromHuman = Number(fromAmt) / 10 ** fromDec;
-          const toHuman = Number(toAmt) / 10 ** toDec;
-          const rate = fromHuman > 0 ? toHuman / fromHuman : 0;
-          const routerList = parsed.dexRouterList?.map(d => d.subRouterList?.map(s => s.dexProtocol?.map(p => p.dexName).join('+')).join(' → ')).join(' | ') || 'N/A';
-          return `### ${c.name} (已格式化，单位已换算)
-输入: ${fromHuman} USDC (${parsed.fromToken?.symbol || 'USDC'})
-输出: ${toHuman.toFixed(6)} ETH (${parsed.toToken?.symbol || 'ETH'})
-兑换率: 1 USDC = ${rate.toFixed(8)} ETH
-路径: ${routerList}
-原始数据 (供参考，数字含 wei 未换算):
+        // swap quote 单位预处理：把 wei 转成人类可读数字
+        if (c.name === 'dual_engine_quote' && parsed && !parsed.error) {
+          const okx = parsed.okx || {};
+          const uni = parsed.uniswap || {};
+          const fromDec = Number(okx.fromTokenDecimal || 6);
+          const toDec = Number(okx.toTokenDecimal || 18);
+
+          const fromHuman = Number(okx.fromTokenAmount || '1000000000') / 10 ** fromDec;
+          const okxToHuman = okx.toAmount ? Number(okx.toAmount) / 10 ** toDec : null;
+          const uniToHuman = uni.toAmount ? Number(uni.toAmount) / 10 ** toDec : null;
+          const okxRoute = okx.dexRouterList?.map(d => d.subRouterList?.map(s => s.dexProtocol?.map(p => p.dexName).join('+')).join(' → ')).join(' | ') || 'N/A';
+
+          return `### ${c.name} (双引擎对比，单位已换算)
+输入: ${fromHuman} USDC (→ WETH)
+**OKX DEX Aggregator**: ${okxToHuman !== null ? okxToHuman.toFixed(6) + ' ETH' : 'ERROR'} | 价格影响: ${okx.priceImpact || 'N/A'}%
+    路径: ${okxRoute}
+**Uniswap Trading API**: ${uniToHuman !== null ? uniToHuman.toFixed(6) + ' ETH' : 'ERROR'} | 价格影响: ${uni.priceImpact || 'N/A'}%
+    路径: ${JSON.stringify(uni.routing || 'N/A').slice(0, 200)}
+**推荐引擎**: ${parsed.recommendation || 'N/A'} — ${parsed.reason || 'N/A'}
+
+原始数据 (供参考):
 ${r.slice(0, 1500)}`;
         }
 
