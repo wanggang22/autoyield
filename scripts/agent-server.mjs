@@ -2083,7 +2083,11 @@ D. Swap 路径推荐
 - 看 get_yield_data 返回的数据，提取每个链的真实 APY
 - 只展示真实有数据的链（X Layer / Ethereum / Base 等）
 - 如果只有 3 条链真有数据，表格就只有 3 行
-- **每一行的数据必须属于该链本身**：Ethereum 行只能填 Ethereum 的 LP 数据，Base 行只能填 Base 的数据，不能交叉混淆
+- **每一行的数据必须属于该链本身**：
+  * Ethereum 行 LP APY 只能是 get_yield_data 里 chain=Ethereum 的数据
+  * Base 行 LP APY 只能是 get_yield_data 里 chain=Base 的数据
+  * **永不允许**在 Ethereum 行里写 "@Base" 或"(Base的数据)"这种跨链引用
+  * 如果 Ethereum 行的 LP 数据 get_yield_data 没返回，该格子就写 "no data"
 
 错误做法（永不允许）：
 - "Arbitrum ~15-30%（典型 V3 池）" ❌ 估算
@@ -2192,13 +2196,13 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
   if (strategyId === 'steady-yield') {
     log(`  Pre-fetching 5 tools for steady-yield...`);
     const USDC_XLAYER = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
-    const ETH_XLAYER = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+    const WETH_XLAYER = '0x5A77f1443D16ee5761d310e38b62f77f726bC71c'; // WETH on X Layer (不是 OKB)
     const preCalls = [
       { name: 'defi_search_xlayer', exec: () => executeAskTool('defi_search', { chain: '196', token: 'USDC', product_group: 'SINGLE_EARN' }) },
       { name: 'get_yield_data',     exec: () => executeAskTool('get_yield_data', {}) },
       { name: 'get_pool_data',      exec: () => executeAskTool('get_pool_data', { token_address: USDC_XLAYER, network: 'xlayer' }) },
       { name: 'defi_search_eth',    exec: () => executeAskTool('defi_search', { chain: '1', token: 'USDC', product_group: 'SINGLE_EARN' }) },
-      { name: 'okx_swap_quote',     exec: () => executeAskTool('get_swap_quote', { chain: '196', from_token: USDC_XLAYER, to_token: ETH_XLAYER, amount: '1000000000' }) },
+      { name: 'okx_swap_quote',     exec: () => executeAskTool('get_swap_quote', { chain: '196', from_token: USDC_XLAYER, to_token: WETH_XLAYER, amount: '1000000000' }) },
     ];
     const preResults = await Promise.all(preCalls.map(async c => {
       try {
