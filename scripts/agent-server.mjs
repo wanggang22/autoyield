@@ -2083,11 +2083,14 @@ D. Swap 路径推荐
 - 看 get_yield_data 返回的数据，提取每个链的真实 APY
 - 只展示真实有数据的链（X Layer / Ethereum / Base 等）
 - 如果只有 3 条链真有数据，表格就只有 3 行
+- **每一行的数据必须属于该链本身**：Ethereum 行只能填 Ethereum 的 LP 数据，Base 行只能填 Base 的数据，不能交叉混淆
 
 错误做法（永不允许）：
 - "Arbitrum ~15-30%（典型 V3 池）" ❌ 估算
 - "BSC ~20-40% (PancakeSwap)" ❌ 估算
 - 任何不是工具直接返回的数字 ❌
+- 在 Ethereum 行的 LP APY 填 Base 的数据 ❌ 归属混淆
+- 每个 APY 必须标注来源链和协议，如 "67.51% (Uniswap V3 WETH-USDC @ Base)"
 
 表头：
 | 链 | 最佳借贷 APY | 最佳 LP APY | TVL | 跨链成本 |
@@ -2201,7 +2204,28 @@ ${req.body?.rule || '找到 X Layer 上最好的赚钱机会'}
       try {
         const r = await c.exec();
         allToolsUsed.push(c.name);
-        try { allToolData[c.name] = JSON.parse(r); } catch { allToolData[c.name] = r; }
+        let parsed;
+        try { parsed = JSON.parse(r); allToolData[c.name] = parsed; } catch { allToolData[c.name] = r; }
+
+        // swap quote 单位预处理：把 wei 转成人类可读数字，避免 AI 看 raw 数据搞错
+        if (c.name === 'okx_swap_quote' && parsed && !parsed.error) {
+          const fromAmt = parsed.fromTokenAmount || '1000000000';
+          const toAmt = parsed.toTokenAmount || '0';
+          const fromDec = Number(parsed.fromToken?.decimal || 6);
+          const toDec = Number(parsed.toToken?.decimal || 18);
+          const fromHuman = Number(fromAmt) / 10 ** fromDec;
+          const toHuman = Number(toAmt) / 10 ** toDec;
+          const rate = fromHuman > 0 ? toHuman / fromHuman : 0;
+          const routerList = parsed.dexRouterList?.map(d => d.subRouterList?.map(s => s.dexProtocol?.map(p => p.dexName).join('+')).join(' → ')).join(' | ') || 'N/A';
+          return `### ${c.name} (已格式化，单位已换算)
+输入: ${fromHuman} USDC (${parsed.fromToken?.symbol || 'USDC'})
+输出: ${toHuman.toFixed(6)} ETH (${parsed.toToken?.symbol || 'ETH'})
+兑换率: 1 USDC = ${rate.toFixed(8)} ETH
+路径: ${routerList}
+原始数据 (供参考，数字含 wei 未换算):
+${r.slice(0, 1500)}`;
+        }
+
         return `### ${c.name}\n${r.slice(0, 3000)}`;
       } catch (err) { return `### ${c.name}\nError: ${err.message}`; }
     }));
