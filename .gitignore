@@ -6,3 +6,4 @@ broadcast/
 .vercel
 .gstack/
 *.tgz
+.mcp.local.json
