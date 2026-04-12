@@ -630,7 +630,6 @@ const X402_PRICES = {
   '/api/strategy':  { amount: '50000',  display: '$0.05',  desc: 'Multi-Step Strategy — signal→analyze→trade or yield optimization' },
   '/api/agent-pay':      { amount: '10000',  display: '$0.01',  desc: 'Agent-to-Agent Payment — pay another agent\'s x402 API and return result' },
   '/api/economic-loop':  { amount: '20000',  display: '$0.02',  desc: 'Economic Loop — full earn→invest→pay→re-earn cycle demonstration' },
-  '/api/arb-scan':       { amount: '20000',  display: '$0.02',  desc: 'Cross-DEX Arbitrage Scanner — Uniswap vs OKX on Ethereum, detect spread opportunities' },
 };
 
 function buildPaymentRequirements(pricePath) {
@@ -1756,98 +1755,6 @@ app.get('/api/economic-loop', x402Guard('/api/economic-loop'), async (req, res) 
   };
   if (req.x402Settlement) { response.payment = req.x402Settlement; res.setHeader('PAYMENT-RESPONSE', Buffer.from(JSON.stringify(req.x402Settlement)).toString('base64')); }
   res.json(response);
-});
-
-// ── /api/arb-scan — Cross-DEX Arbitrage Scanner (Ethereum) ──────────────────
-// 使用 4 个 Uniswap Skills + OKX DEX Skill 做实时套利检测
-app.get('/api/arb-scan', x402Guard('/api/arb-scan'), async (req, res) => {
-  const pair = (req.query.pair || 'ETH/USDC').toUpperCase();
-  const amountUSDC = Number(req.query.amount || '1000');
-  log(`/api/arb-scan: ${pair}, ${amountUSDC} USDC`);
-
-  // 常见代币 (Ethereum mainnet)
-  const TOKENS = {
-    USDC: { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6 },
-    WETH: { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', decimals: 18 },
-    WBTC: { address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', decimals: 8 },
-    USDT: { address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', decimals: 6 },
-    DAI:  { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', decimals: 18 },
-  };
-
-  // 解析 pair
-  const [fromSym, toSym] = pair.split('/');
-  const from = TOKENS[fromSym] || TOKENS.USDC;
-  const to = TOKENS[toSym] || TOKENS.WETH;
-  const amount = BigInt(amountUSDC * 10 ** from.decimals).toString();
-
-  try {
-    const [okxResult, uniResult] = await Promise.all([
-      getSwapQuote('1', from.address, to.address, amount),
-      uniswapQuote(from.address, to.address, amount, 1, account.address),
-    ]);
-
-    const okx = okxResult ? {
-      engine: 'OKX DEX Aggregator',
-      toAmount: okxResult.toTokenAmount,
-      toHuman: Number(okxResult.toTokenAmount) / 10 ** to.decimals,
-      priceImpact: okxResult.priceImpactPercentage,
-      routerAddress: okxResult.routerAddress,
-      dexCount: okxResult.dexRouterList?.length || 0,
-    } : { engine: 'OKX DEX Aggregator', error: 'no quote' };
-
-    const uni = uniResult?.quote ? {
-      engine: 'Uniswap Trading API',
-      toAmount: uniResult.quote.output?.amount || uniResult.quote.outputAmount,
-      toHuman: Number(uniResult.quote.output?.amount || uniResult.quote.outputAmount || '0') / 10 ** to.decimals,
-      priceImpact: uniResult.quote.priceImpact,
-      routing: uniResult.routing,
-      gasUseEstimate: uniResult.quote.gasUseEstimate,
-    } : { engine: 'Uniswap Trading API', error: uniResult?.errorCode || 'no quote' };
-
-    // 计算套利机会
-    let arbitrage = null;
-    if (okx.toHuman && uni.toHuman) {
-      const diff = Math.abs(okx.toHuman - uni.toHuman);
-      const avg = (okx.toHuman + uni.toHuman) / 2;
-      const spreadPct = diff / avg;  // 比例（不是 %）
-      const better = okx.toHuman > uni.toHuman ? 'OKX' : 'Uniswap';
-      const worse = okx.toHuman > uni.toHuman ? 'Uniswap' : 'OKX';
-      // 套利毛利 ≈ 价差比例 × 名义本金（以 USDC 计）
-      // 套利思路：在更便宜的 DEX 买，在更贵的 DEX 卖，理论获利 spread × 本金
-      const grossProfitUSD = spreadPct * amountUSDC;
-      arbitrage = {
-        spread: `${(spreadPct * 100).toFixed(4)}%`,
-        spreadAbs: diff.toFixed(8) + ' ' + toSym,
-        better: `${better} gives more output`,
-        strategy: `Buy ${toSym} on ${worse}, sell on ${better}`,
-        estimatedGrossProfitUSD: `$${grossProfitUSD.toFixed(4)} per ${amountUSDC} ${fromSym} round-trip`,
-        note: 'Gross only — actual profit must deduct round-trip gas (~$5-30) + MEV risk. Profitable only when spread > ~0.5-1% for typical trade sizes.',
-      };
-    }
-
-    const response = {
-      service: 'Cross-DEX Arbitrage Scanner',
-      pair,
-      amount: `${amountUSDC} ${fromSym}`,
-      chain: 'Ethereum mainnet (1)',
-      engines: { okx, uniswap: uni },
-      arbitrage,
-      skillsUsed: {
-        okx: ['okx-dex-swap (OKX DEX Aggregator)'],
-        uniswap: [
-          'uniswap-swap-integration (Trading API quote)',
-          'uniswap-swap-planner (route analysis)',
-        ],
-      },
-      poweredBy: 'Real-time OKX + Uniswap dual engine on Ethereum',
-      timestamp: new Date().toISOString(),
-    };
-    if (req.x402Settlement) { response.payment = req.x402Settlement; res.setHeader('PAYMENT-RESPONSE', Buffer.from(JSON.stringify(req.x402Settlement)).toString('base64')); }
-    res.json(response);
-  } catch (err) {
-    log(`arb-scan error: ${err.message}`);
-    res.status(500).json({ error: err.message });
-  }
 });
 
 // ── AutoYield 24/7 Monitor Engine ────────────────────────────────────────────
