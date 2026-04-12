@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "autoyield": {
+      "command": "node",
+      "args": ["scripts/mcp-server.mjs"],
+      "env": {
+        "AGENT_URL": "https://autoyield-production.up.railway.app",
+        "AGENT_PRIVATE_KEY": ""
+      }
+    }
+  }
+}

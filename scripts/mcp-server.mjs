@@ -1,28 +1,114 @@
 #!/usr/bin/env node
 /**
- * mcp-server.mjs — MCP Server for AgentsMarketplace
+ * mcp-server.mjs — AutoYield MCP Server
  *
- * Exposes the marketplace's AI Agent capabilities as MCP tools.
+ * Exposes AutoYield AI Agent capabilities as MCP tools.
  * Any AI Agent (Claude Code, Cursor, etc.) can install this and call our services.
+ * x402 micropayments are handled automatically — caller just uses tools.
  *
- * Protocol: JSON-RPC 2.0 over stdio
+ * Protocol: JSON-RPC 2.0 over stdio (MCP spec 2024-11-05)
+ *
+ * Env vars:
+ *   AGENT_URL         — AutoYield API base URL (default: https://autoyield-production.up.railway.app)
+ *   AGENT_PRIVATE_KEY — X Layer wallet private key (for auto x402 payment)
+ *
  * Usage: node scripts/mcp-server.mjs
- *
- * For Skills Arena submission: this makes AgentsMarketplace a reusable Skill.
  */
 
-import { createInterface } from 'readline';
+import { createWalletClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // ── Configuration ───────────────────────────────────────────────────────────
 
-const AGENT_BASE_URL = process.env.AGENT_URL || 'https://xlayeragent-server-production.up.railway.app';
+const AGENT_BASE_URL = process.env.AGENT_URL || 'https://autoyield-production.up.railway.app';
+const PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY;
+
+const XLAYER_CHAIN = {
+  id: 196, name: 'X Layer', network: 'xlayer',
+  nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+  rpcUrls: { default: { http: ['https://rpc.xlayer.tech'] } },
+};
+
+const USDC_ADDRESS = '0x74b7F16337b8972027F6196A17a631aC6dE26d22';
+
+if (!PRIVATE_KEY) {
+  process.stderr.write(`[mcp] ERROR: AGENT_PRIVATE_KEY not set. This is required for x402 auto-payment.\n`);
+  process.stderr.write(`[mcp] Please set AGENT_PRIVATE_KEY in your MCP config (.mcp.json) env section.\n`);
+  process.exit(1);
+}
+
+const account = privateKeyToAccount(PRIVATE_KEY.startsWith('0x') ? PRIVATE_KEY : `0x${PRIVATE_KEY}`);
+const walletClient = createWalletClient({ account, chain: XLAYER_CHAIN, transport: http() });
+process.stderr.write(`[mcp] Wallet: ${account.address}\n`);
+
+// ── x402 Auto Payment ──────────────────────────────────────────────────────
+
+async function signX402Payment(requirements) {
+  // requirements 可能是完整的 { accepts: [...] } 或单个 accept 对象
+  const accept = requirements.accepts ? requirements.accepts[0] : requirements;
+  const { payTo, maxAmountRequired, asset } = accept;
+
+  const amount = BigInt(maxAmountRequired);
+  const nonce = '0x' + [...crypto.getRandomValues(new Uint8Array(32))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const validBefore = String(Math.floor(Date.now() / 1000) + 3600);
+
+  const domain = {
+    name: 'USD Coin',
+    version: '2',
+    chainId: 196,
+    verifyingContract: USDC_ADDRESS,
+  };
+
+  const types = {
+    TransferWithAuthorization: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'validAfter', type: 'uint256' },
+      { name: 'validBefore', type: 'uint256' },
+      { name: 'nonce', type: 'bytes32' },
+    ],
+  };
+
+  const message = {
+    from: account.address,
+    to: payTo,
+    value: amount,
+    validAfter: 0n,
+    validBefore: BigInt(validBefore),
+    nonce,
+  };
+
+  const signature = await walletClient.signTypedData({ domain, types, primaryType: 'TransferWithAuthorization', message });
+
+  // 必须匹配 agent-server x402Guard 期望的完整 payload 格式
+  const paymentPayload = {
+    x402Version: requirements.x402Version || 1,
+    scheme: accept.scheme || 'exact',
+    network: accept.network || 'eip155:196',
+    payload: {
+      signature,
+      authorization: {
+        from: account.address,
+        to: payTo,
+        value: amount.toString(),
+        validAfter: '0',
+        validBefore: validBefore,
+        nonce,
+        asset: asset || USDC_ADDRESS,
+      },
+    },
+  };
+
+  return Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
+}
 
 // ── MCP Tool Definitions ────────────────────────────────────────────────────
 
 const TOOLS = [
   {
-    name: 'marketplace_ask',
-    description: 'Ask the AgentsMarketplace AI Agent any question about crypto, DeFi, or X Layer. The Agent uses 20+ tools (market data, signals, security, DeFi, Uniswap) to answer. Requires x402 payment ($0.02 USDC).',
+    name: 'autoyield_ask',
+    description: 'Ask the AutoYield AI Agent any question about crypto, DeFi, or X Layer. Uses 20+ tools (market data, signals, security, DeFi, Uniswap) to answer. x402: $0.02 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -32,8 +118,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_analyze',
-    description: 'Get AI-powered market analysis for any token. Returns real-time price, K-line trends, and AI insights. Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_analyze',
+    description: 'AI market analysis for any token: real-time price, K-line trends, AI insights. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -43,8 +129,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_dual_swap',
-    description: 'Compare swap quotes from OKX DEX Aggregator vs Uniswap on X Layer. Returns which engine gives better price. Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_dual_swap',
+    description: 'Compare swap quotes: OKX DEX Aggregator vs Uniswap on X Layer. Returns which engine gives better price. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -56,8 +142,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_signals',
-    description: 'Get smart money / whale / KOL trading signals and top trader leaderboard. Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_signals',
+    description: 'Smart money / whale / KOL trading signals and top trader leaderboard. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -67,8 +153,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_security',
-    description: 'Scan a token for security risks (honeypot, rug pull, high tax). Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_security',
+    description: 'Scan token for security risks: honeypot, rug pull, high tax. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -79,8 +165,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_defi',
-    description: 'Search DeFi yield products on X Layer and other chains. Returns best APY opportunities from Aave, Uniswap LP, Lido, etc. Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_defi',
+    description: 'Search DeFi yield products on X Layer and other chains. Best APY from Aave, Uniswap LP, Lido, etc. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -91,8 +177,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_portfolio',
-    description: 'Analyze wallet holdings and portfolio value across 20+ chains. Requires x402 payment ($0.01 USDC).',
+    name: 'autoyield_portfolio',
+    description: 'Wallet holdings and portfolio value across 20+ chains. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -102,8 +188,8 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_strategy',
-    description: 'Execute a multi-step AI strategy (signal-to-trade, yield optimization, portfolio rebalance). Premium feature. Requires x402 payment ($0.05 USDC).',
+    name: 'autoyield_strategy',
+    description: 'Execute multi-step AI strategy: signal-to-trade, yield optimization, portfolio rebalance, smart money follow. x402: $0.05 USDC.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -113,72 +199,81 @@ const TOOLS = [
     },
   },
   {
-    name: 'marketplace_economic_loop',
-    description: 'Demonstrate the Agent economic loop: earn→analyze→invest→pay→re-earn. Shows how Agents create value on X Layer. Requires x402 payment ($0.02 USDC).',
+    name: 'autoyield_trenches',
+    description: 'Hot meme coins, new launches, trend analysis. x402: $0.01 USDC.',
     inputSchema: {
       type: 'object',
-      properties: {},
+      properties: {
+        chain: { type: 'string', description: 'Chain index, default "1"' },
+      },
       required: [],
     },
   },
 ];
 
-// ── Tool Execution ──────────────────────────────────────────────────────────
+// ── Tool → Endpoint Mapping ────────────────────────────────────────────────
 
 const TOOL_TO_ENDPOINT = {
-  marketplace_ask:           (args) => `/api/ask?q=${encodeURIComponent(args.question)}`,
-  marketplace_analyze:       (args) => `/api/analyze?q=${encodeURIComponent(args.token)}`,
-  marketplace_dual_swap:     (args) => `/api/dual-swap?from=${args.from_token}&to=${args.to_token}&amount=${args.amount}`,
-  marketplace_signals:       (args) => `/api/signals?chain=${args.chain || '1'}`,
-  marketplace_security:      (args) => `/api/security?q=${encodeURIComponent(args.token)}&chain=${args.chain || '196'}`,
-  marketplace_defi:          (args) => `/api/defi?token=${encodeURIComponent(args.token || 'USDC')}&chain=${args.chain || '196'}`,
-  marketplace_portfolio:     (args) => `/api/portfolio?address=${args.address}`,
-  marketplace_strategy:      (args) => `/api/strategy?q=${encodeURIComponent(args.goal)}`,
-  marketplace_economic_loop: ()     => `/api/economic-loop`,
+  autoyield_ask:       (args) => ({ method: 'GET', path: `/api/ask?q=${encodeURIComponent(args.question)}` }),
+  autoyield_analyze:   (args) => ({ method: 'GET', path: `/api/analyze?q=${encodeURIComponent(args.token)}` }),
+  autoyield_dual_swap: (args) => ({ method: 'GET', path: `/api/dual-swap?from=${args.from_token}&to=${args.to_token}&amount=${args.amount}` }),
+  autoyield_signals:   (args) => ({ method: 'GET', path: `/api/signals?chain=${args.chain || '1'}` }),
+  autoyield_security:  (args) => ({ method: 'GET', path: `/api/security?q=${encodeURIComponent(args.token)}&chain=${args.chain || '196'}` }),
+  autoyield_defi:      (args) => ({ method: 'GET', path: `/api/defi?token=${encodeURIComponent(args.token || 'USDC')}&chain=${args.chain || '196'}` }),
+  autoyield_portfolio: (args) => ({ method: 'GET', path: `/api/portfolio?address=${args.address}` }),
+  autoyield_strategy:  (args) => ({ method: 'GET', path: `/api/strategy?q=${encodeURIComponent(args.goal)}` }),
+  autoyield_trenches:  (args) => ({ method: 'GET', path: `/api/trenches?chain=${args.chain || '1'}` }),
 };
 
-async function executeTool(name, args) {
-  const pathFn = TOOL_TO_ENDPOINT[name];
-  if (!pathFn) return { error: `Unknown tool: ${name}` };
+// ── Tool Execution with Auto x402 ─────────────────────────────────────────
 
-  const url = AGENT_BASE_URL + pathFn(args);
+async function executeTool(name, args) {
+  const endpointFn = TOOL_TO_ENDPOINT[name];
+  if (!endpointFn) return { error: `Unknown tool: ${name}` };
+
+  const { method, path } = endpointFn(args);
+  const url = AGENT_BASE_URL + path;
 
   try {
-    // First request — may return 402
+    // First request
     let res = await fetch(url);
 
     if (res.status === 402) {
-      // In production, this would auto-pay via x402.
-      // For demo, return the payment requirements so the calling Agent can pay.
-      const body = await res.text();
+      // Parse payment requirements
+      const header = res.headers.get('PAYMENT-REQUIRED') || res.headers.get('payment-required');
       let requirements;
       try {
-        const header = res.headers.get('PAYMENT-REQUIRED') || res.headers.get('payment-required');
-        requirements = header ? JSON.parse(Buffer.from(header, 'base64').toString('utf-8')) : JSON.parse(body);
-      } catch { requirements = body; }
+        requirements = header ? JSON.parse(Buffer.from(header, 'base64').toString('utf-8')) : await res.json();
+      } catch { requirements = await res.text(); }
 
-      return {
-        status: 'payment_required',
-        message: `This endpoint requires x402 micropayment. Send a PAYMENT-SIGNATURE header to access.`,
-        requirements,
-        endpoint: url,
-        howToPay: 'Sign EIP-3009 TransferWithAuthorization for the required amount, encode as base64, and send as PAYMENT-SIGNATURE header.',
-      };
+      // Auto-pay
+      process.stderr.write(`[mcp] x402 paying for ${name}...\n`);
+      const paymentHeader = await signX402Payment(requirements);
+      res = await fetch(url, { headers: { 'X-PAYMENT': paymentHeader } });
+
+      if (res.ok) {
+        const data = await res.json();
+        process.stderr.write(`[mcp] x402 paid ✓\n`);
+        return data;
+      } else {
+        const body = await res.text();
+        process.stderr.write(`[mcp] x402 payment failed: ${res.status} ${body.slice(0, 200)}\n`);
+        return { error: `x402 payment failed: ${res.status}`, detail: body.slice(0, 500) };
+      }
     }
 
-    const data = await res.json();
-    return data;
+    return await res.json();
   } catch (err) {
     return { error: err.message };
   }
 }
 
-// ── JSON-RPC over stdio ─────────────────────────────────────────────────────
+// ── JSON-RPC over stdio (MCP) ──────────────────────────────────────────────
 
 const SERVER_INFO = {
-  name: 'agentsmarketplace',
+  name: 'autoyield',
   version: '2.0.0',
-  description: 'AI Agent Service Marketplace on X Layer — 20+ tools, x402 micropayments, OKX + Uniswap dual engine',
+  description: 'AutoYield AI DeFi Agent on X Layer — 20+ tools, x402 micropayments, OKX + Uniswap dual engine',
 };
 
 function handleRequest(request) {
@@ -203,7 +298,6 @@ function handleRequest(request) {
 
     case 'tools/call': {
       const { name, arguments: args } = params;
-      // Return a promise — handled in the message loop
       return executeTool(name, args || {}).then(result => ({
         jsonrpc: '2.0', id,
         result: {
@@ -213,7 +307,7 @@ function handleRequest(request) {
     }
 
     case 'notifications/initialized':
-      return null; // No response for notifications
+      return null;
 
     default:
       return {
@@ -225,30 +319,21 @@ function handleRequest(request) {
 
 // ── stdio transport ─────────────────────────────────────────────────────────
 
-const rl = createInterface({ input: process.stdin });
 let buffer = '';
 
 process.stdin.on('data', async (chunk) => {
   buffer += chunk.toString();
-
-  // Process complete JSON-RPC messages (newline-delimited)
   const lines = buffer.split('\n');
-  buffer = lines.pop(); // Keep incomplete line in buffer
+  buffer = lines.pop();
 
   for (const line of lines) {
     if (!line.trim()) continue;
-
     try {
       const request = JSON.parse(line);
       const response = handleRequest(request);
-
-      if (response === null) continue; // Notification, no response
-
-      // Handle async (tools/call returns a Promise)
+      if (response === null) continue;
       const resolved = await response;
-      if (resolved) {
-        process.stdout.write(JSON.stringify(resolved) + '\n');
-      }
+      if (resolved) process.stdout.write(JSON.stringify(resolved) + '\n');
     } catch (err) {
       process.stdout.write(JSON.stringify({
         jsonrpc: '2.0', id: null,
@@ -258,6 +343,6 @@ process.stdin.on('data', async (chunk) => {
   }
 });
 
-process.stderr.write(`[mcp-server] AgentsMarketplace MCP Server started\n`);
-process.stderr.write(`[mcp-server] Agent URL: ${AGENT_BASE_URL}\n`);
-process.stderr.write(`[mcp-server] Tools: ${TOOLS.length}\n`);
+process.stderr.write(`[mcp] AutoYield MCP Server started\n`);
+process.stderr.write(`[mcp] API: ${AGENT_BASE_URL}\n`);
+process.stderr.write(`[mcp] Tools: ${TOOLS.length}\n`);
