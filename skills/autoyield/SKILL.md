@@ -114,16 +114,15 @@ Typical scan: **5-8 rounds, 30-60 tool calls, 45-70 seconds.**
 
 ## MCP Installation
 
-Add to your `.mcp.json` (Claude Code / Cursor):
+Add to your `.mcp.json` (Claude Code) or `~/.cursor/mcp.json` (Cursor):
 
 ```json
 {
   "mcpServers": {
     "autoyield-meme": {
-      "command": "node",
-      "args": ["scripts/mcp-server.mjs"],
+      "command": "npx",
+      "args": ["-y", "autoyield-meme-scanner"],
       "env": {
-        "AGENT_URL": "https://autoyield-production.up.railway.app",
         "AGENT_PRIVATE_KEY": "your-x-layer-wallet-private-key"
       }
     }
@@ -131,7 +130,9 @@ Add to your `.mcp.json` (Claude Code / Cursor):
 }
 ```
 
-Requires: Node.js 18+, USDC on X Layer wallet.
+Requires: Node.js 18+, USDC on X Layer wallet ($0.05 per scan).
+
+Source code: `mcp-package/` directory in this repo, also published to npm as `autoyield-meme-scanner`.
 
 ## Supported Chains
 

@@ -1,4 +1,8 @@
-node_modules/\n.env\ncache/\nout/\nbroadcast/
-
+node_modules/
+.env
+cache/
+out/
+broadcast/
 .vercel
 .gstack/
+*.tgz

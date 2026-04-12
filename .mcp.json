@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "autoyield": {
+    "autoyield-meme": {
       "command": "node",
-      "args": ["scripts/mcp-server.mjs"],
+      "args": ["mcp-package/mcp-server.mjs"],
       "env": {
         "AGENT_URL": "https://autoyield-production.up.railway.app",
         "AGENT_PRIVATE_KEY": ""

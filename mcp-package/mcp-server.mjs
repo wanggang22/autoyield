@@ -12,7 +12,7 @@
  *   AGENT_URL         — AutoYield API (default: https://autoyield-production.up.railway.app)
  *   AGENT_PRIVATE_KEY — X Layer 钱包私钥 (用于 x402 自动付费)
  *
- * Usage: node scripts/mcp-server.mjs
+ * Usage: npx -y autoyield-meme-scanner  (or: node mcp-package/mcp-server.mjs)
  */
 
 import { createWalletClient, http } from 'viem';

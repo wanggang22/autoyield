@@ -1,0 +1,43 @@
+{
+  "name": "autoyield-meme-scanner",
+  "version": "1.0.0",
+  "description": "AI-powered meme coin scanner MCP server. One natural language query triggers 8 OKX OnchainOS APIs via Claude AI agent. Pay-per-scan via x402 micropayment ($0.05 USDC on X Layer).",
+  "type": "module",
+  "bin": {
+    "autoyield-meme-scanner": "./mcp-server.mjs"
+  },
+  "files": [
+    "mcp-server.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node mcp-server.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "meme-coins",
+    "solana",
+    "ethereum",
+    "x402",
+    "x-layer",
+    "okx",
+    "ai-agent",
+    "claude",
+    "defi"
+  ],
+  "author": "AutoYield",
+  "license": "MIT",
+  "homepage": "https://github.com/wanggang22/autoyield",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanggang22/autoyield.git",
+    "directory": "mcp-package"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "viem": "^2.47.6"
+  }
+}
