@@ -317,11 +317,12 @@
   <div class="container nav">
     <div class="logo">AutoYield</div>
     <div class="nav-links">
-      <a href="#try">Try</a>
-      <a href="#how">How</a>
-      <a href="#skills">Skills</a>
-      <a href="#integrate">Integrate</a>
+      <a href="#try" data-en="Try" data-zh="试用">Try</a>
+      <a href="#how" data-en="How" data-zh="使用">How</a>
+      <a href="#skills" data-en="Skills" data-zh="技能">Skills</a>
+      <a href="#integrate" data-en="Integrate" data-zh="集成">Integrate</a>
       <a href="https://github.com/wanggang22/autoyield" target="_blank">GitHub</a>
+      <button id="langToggle" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem">中文</button>
     </div>
   </div>
 </header>
@@ -330,17 +331,20 @@
   <div class="container">
     <div class="hero-badge">🏆 Build X Hackathon 2026 · X Layer Arena + Skills Arena</div>
     <h1>AI Meme Hunter</h1>
-    <p class="hero-sub" style="margin-bottom:12px">
-      <strong>Native to X Layer</strong> · 扫描 Solana / Ethereum / Base / BSC 四链 meme 币
+    <p class="hero-sub" style="margin-bottom:12px"
+       data-en="<strong>Native to X Layer</strong> · Scans memes across Solana / Ethereum / Base / BSC"
+       data-zh="<strong>Native to X Layer</strong> · 扫描 Solana / Ethereum / Base / BSC 四链 meme 币">
+      <strong>Native to X Layer</strong> · Scans memes across Solana / Ethereum / Base / BSC
     </p>
-    <p class="hero-sub">
-      一句自然语言 → AI 并行调用 <strong>8 个 OKX OnchainOS Skills</strong> →
-      精确到合约地址的推荐。每次 <strong>$0.05 USDC</strong>，零 gas（x402 on X Layer）。
+    <p class="hero-sub"
+       data-en="One natural language query → AI calls <strong>8 OKX OnchainOS Skills in parallel</strong> → recommendations with exact contract addresses. <strong>$0.05 USDC</strong> per scan, zero gas (x402 on X Layer)."
+       data-zh="一句自然语言 → AI 并行调用 <strong>8 个 OKX OnchainOS Skills</strong> → 精确到合约地址的推荐。每次 <strong>$0.05 USDC</strong>，零 gas（x402 on X Layer）。">
+      One natural language query → AI calls <strong>8 OKX OnchainOS Skills in parallel</strong> → recommendations with exact contract addresses. <strong>$0.05 USDC</strong> per scan, zero gas (x402 on X Layer).
     </p>
     <div class="hero-cta">
-      <a href="#try" class="btn btn-primary">🚀 立即体验</a>
-      <a href="https://www.npmjs.com/package/autoyield-meme-scanner" class="btn btn-outline" target="_blank">📦 npm 安装</a>
-      <a href="https://github.com/wanggang22/autoyield" class="btn btn-outline" target="_blank">📖 查看源码</a>
+      <a href="#try" class="btn btn-primary" data-en="🚀 Try Now" data-zh="🚀 立即体验">🚀 Try Now</a>
+      <a href="https://www.npmjs.com/package/autoyield-meme-scanner" class="btn btn-outline" target="_blank" data-en="📦 npm Install" data-zh="📦 npm 安装">📦 npm Install</a>
+      <a href="https://github.com/wanggang22/autoyield" class="btn btn-outline" target="_blank" data-en="📖 View Source" data-zh="📖 查看源码">📖 View Source</a>
     </div>
   </div>
 </section>
@@ -348,28 +352,35 @@
 <!-- How it works -->
 <section id="how">
   <div class="container">
-    <h2>三种接入方式</h2>
-    <p class="section-sub">同一套 AI 能力，按你的使用场景选。都支付 $0.05 USDC / 次（x402 零 gas）。</p>
+    <h2 data-en="Three Ways to Use" data-zh="三种接入方式">Three Ways to Use</h2>
+    <p class="section-sub"
+       data-en="Same AI capability, pick by your use case. Each scan costs $0.05 USDC (x402, zero gas)."
+       data-zh="同一套 AI 能力，按你的使用场景选。都支付 $0.05 USDC / 次（x402 零 gas）。">
+      Same AI capability, pick by your use case. Each scan costs $0.05 USDC (x402, zero gas).
+    </p>
     <div class="grid">
       <div class="card">
         <div class="card-icon">🌐</div>
-        <h3>网页前端</h3>
-        <p>直接在浏览器试用，下方自然语言输入框立刻可用。适合非开发者。</p>
+        <h3 data-en="Web Frontend" data-zh="网页前端">Web Frontend</h3>
+        <p data-en="Try directly in browser. Natural language input ready below. Best for non-developers."
+           data-zh="直接在浏览器试用，下方自然语言输入框立刻可用。适合非开发者。">
+          Try directly in browser. Natural language input ready below. Best for non-developers.
+        </p>
       </div>
       <div class="card">
         <div class="card-icon">🤖</div>
         <h3>MCP (Claude Code / Cursor)</h3>
-        <p>
-          <code>npx autoyield-meme-scanner</code> 配到 MCP 即可让 AI 自动调用。
-          支付自动处理，你只需用自然语言说出需求。
+        <p data-en="Add <code>npx autoyield-meme-scanner</code> to MCP and let AI agents call it. Payment auto-handled. You just speak naturally."
+           data-zh="<code>npx autoyield-meme-scanner</code> 配到 MCP 即可让 AI 自动调用。支付自动处理，你只需用自然语言说出需求。">
+          Add <code>npx autoyield-meme-scanner</code> to MCP and let AI agents call it. Payment auto-handled. You just speak naturally.
         </p>
       </div>
       <div class="card">
         <div class="card-icon">⚙️</div>
         <h3>HTTP API + Telegram Bot</h3>
-        <p>
-          定时 cron 调用 API，结果推送到 Telegram。
-          参考实现: <code>autoyield-meme-monitor</code>（Python）。
+        <p data-en="Cron-trigger API, push results to Telegram. Reference impl: <code>autoyield-meme-monitor</code> (Python)."
+           data-zh="定时 cron 调用 API，结果推送到 Telegram。参考实现: <code>autoyield-meme-monitor</code>（Python）。">
+          Cron-trigger API, push results to Telegram. Reference impl: <code>autoyield-meme-monitor</code> (Python).
         </p>
       </div>
     </div>
@@ -379,25 +390,45 @@
 <!-- Try -->
 <section id="try" style="background: rgba(139, 92, 246, 0.03);">
   <div class="container">
-    <h2>🎯 立即体验</h2>
-    <p class="section-sub">用自然语言描述你要的 meme 币。连接 OKX Wallet 并支付 $0.05 USDC。</p>
+    <h2 data-en="🎯 Try It Now" data-zh="🎯 立即体验">🎯 Try It Now</h2>
+    <p class="section-sub"
+       data-en="Describe the meme coins you want in natural language. Connect OKX Wallet and pay $0.05 USDC."
+       data-zh="用自然语言描述你要的 meme 币。连接 OKX Wallet 并支付 $0.05 USDC。">
+      Describe the meme coins you want in natural language. Connect OKX Wallet and pay $0.05 USDC.
+    </p>
 
     <div class="try-box">
       <div class="input-row">
-        <input id="ruleInput" type="text" placeholder='例如: 找 Solana 上市值 10K-500K、聪明钱在买的 meme 币' />
-        <button id="scanBtn" class="btn btn-primary">开始扫描</button>
+        <input id="ruleInput" type="text"
+               placeholder="e.g. Find Solana memes with $10K-$500K market cap and smart money buying"
+               data-en-ph="e.g. Find Solana memes with $10K-$500K market cap and smart money buying"
+               data-zh-ph="例如: 找 Solana 上市值 10K-500K、聪明钱在买的 meme 币" />
+        <button id="scanBtn" class="btn btn-primary" data-en="Scan" data-zh="开始扫描">Scan</button>
       </div>
 
       <div class="examples">
-        <div class="example-chip" data-rule="找 Solana 上市值 10K-500K、换手率超 50%、前10持仓低于 25% 的搞笑 meme 币">Solana 搞笑 meme</div>
-        <div class="example-chip" data-rule="ETH 链聪明钱在买的 meme，市值 100K+、开发者已清仓">ETH 聪明钱跟单</div>
-        <div class="example-chip" data-rule="Base 链新上线 meme，持币人 >500、LP 已销毁 90%+">Base 新币</div>
-        <div class="example-chip" data-rule="找 Solana 上有 3 个以上聪明钱地址持续买入的 meme">Solana 强信号</div>
+        <div class="example-chip"
+             data-en-rule="Find Solana memes with $10K-$500K market cap, turnover >50%, top 10 holdings <25%, funny narratives"
+             data-zh-rule="找 Solana 上市值 10K-500K、换手率超 50%、前10持仓低于 25% 的搞笑 meme 币"
+             data-en="Solana funny memes" data-zh="Solana 搞笑 meme">Solana funny memes</div>
+        <div class="example-chip"
+             data-en-rule="ETH chain memes with smart money buying, market cap 100K+, dev wallet emptied"
+             data-zh-rule="ETH 链聪明钱在买的 meme，市值 100K+、开发者已清仓"
+             data-en="ETH smart money" data-zh="ETH 聪明钱跟单">ETH smart money</div>
+        <div class="example-chip"
+             data-en-rule="Base chain new meme launches with >500 holders and LP burned 90%+"
+             data-zh-rule="Base 链新上线 meme，持币人 >500、LP 已销毁 90%+"
+             data-en="Base new launches" data-zh="Base 新币">Base new launches</div>
+        <div class="example-chip"
+             data-en-rule="Solana memes with 3+ smart money wallets continuously buying"
+             data-zh-rule="找 Solana 上有 3 个以上聪明钱地址持续买入的 meme"
+             data-en="Solana strong signals" data-zh="Solana 强信号">Solana strong signals</div>
       </div>
 
-      <div id="resultArea" class="result-area">
-        输入筛选标准或点击示例，然后点"开始扫描"。
-        结果会显示每个币的名称、合约地址、价格、市值、24h 量、换手率、持币人、前10 持仓、AI 推荐理由。
+      <div id="resultArea" class="result-area"
+           data-en="Input criteria or click an example, then press Scan. Results will show each coin's name, contract address, price, market cap, 24h volume, turnover rate, holders, top-10 concentration, and AI's reasoning."
+           data-zh="输入筛选标准或点击示例，然后点&quot;开始扫描&quot;。结果会显示每个币的名称、合约地址、价格、市值、24h 量、换手率、持币人、前10 持仓、AI 推荐理由。">
+        Input criteria or click an example, then press Scan. Results will show each coin's name, contract address, price, market cap, 24h volume, turnover rate, holders, top-10 concentration, and AI's reasoning.
       </div>
     </div>
   </div>
@@ -406,21 +437,26 @@
 <!-- Skills -->
 <section id="skills">
   <div class="container">
-    <h2>8 个 OKX OnchainOS Skills</h2>
-    <p class="section-sub">每次 meme 扫描并行调用，Claude Sonnet 4 综合数据给出推荐（最多 20 轮 tool_use）。</p>
+    <h2 data-en="8 OKX OnchainOS Skills" data-zh="8 个 OKX OnchainOS Skills">8 OKX OnchainOS Skills</h2>
+    <p class="section-sub"
+       data-en="Called in parallel per meme scan. Claude Sonnet 4 synthesizes the data (up to 20 rounds of tool_use)."
+       data-zh="每次 meme 扫描并行调用，Claude Sonnet 4 综合数据给出推荐（最多 20 轮 tool_use）。">
+      Called in parallel per meme scan. Claude Sonnet 4 synthesizes the data (up to 20 rounds of tool_use).
+    </p>
     <div class="skills-grid">
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-trenches</div><div class="desc">热门 meme 币列表 + dev 信誉</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-signal</div><div class="desc">聪明钱 / 鲸鱼 / KOL 信号</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (info)</div><div class="desc">实时价格、市值、24h 成交量</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (advanced)</div><div class="desc">风险等级、dev 持仓、Top10 集中度</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (holders)</div><div class="desc">持币人分布、KOL 持仓</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (top traders)</div><div class="desc">最赚的地址、PnL</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (cluster)</div><div class="desc">地址聚类、rug pull 风险</div></div></div>
-      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-security</div><div class="desc">蜜罐 / 貔貅盘检测</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-trenches</div><div class="desc" data-en="Trending meme list + dev reputation" data-zh="热门 meme 币列表 + dev 信誉">Trending meme list + dev reputation</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-signal</div><div class="desc" data-en="Smart money / whale / KOL signals" data-zh="聪明钱 / 鲸鱼 / KOL 信号">Smart money / whale / KOL signals</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (info)</div><div class="desc" data-en="Real-time price, market cap, 24h volume" data-zh="实时价格、市值、24h 成交量">Real-time price, market cap, 24h volume</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (advanced)</div><div class="desc" data-en="Risk level, dev holdings, top-10 concentration" data-zh="风险等级、dev 持仓、Top10 集中度">Risk level, dev holdings, top-10 concentration</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (holders)</div><div class="desc" data-en="Holder distribution, KOL positions" data-zh="持币人分布、KOL 持仓">Holder distribution, KOL positions</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (top traders)</div><div class="desc" data-en="Most profitable wallets, PnL" data-zh="最赚的地址、PnL">Most profitable wallets, PnL</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-dex-token (cluster)</div><div class="desc" data-en="Address clustering, rug pull risk" data-zh="地址聚类、rug pull 风险">Address clustering, rug pull risk</div></div></div>
+      <div class="skill-item"><div class="dot"></div><div><div class="name">okx-security</div><div class="desc" data-en="Honeypot / rug pull detection" data-zh="蜜罐 / 貔貅盘检测">Honeypot / rug pull detection</div></div></div>
     </div>
-    <p class="section-sub" style="margin-top:24px;font-size:.85rem">
-      + <code>okx-x402-payment</code> 作为付费层 · + <code>okx-agentic-wallet</code> TEE 签名
-      · <a href="https://github.com/wanggang22/autoyield/tree/master/skills">查看所有 SKILL.md</a>
+    <p class="section-sub" style="margin-top:24px;font-size:.85rem"
+       data-en="+ <code>okx-x402-payment</code> as payment layer · + <code>okx-agentic-wallet</code> TEE signing · <a href='https://github.com/wanggang22/autoyield/tree/master/skills'>View all SKILL.md</a>"
+       data-zh="+ <code>okx-x402-payment</code> 作为付费层 · + <code>okx-agentic-wallet</code> TEE 签名 · <a href='https://github.com/wanggang22/autoyield/tree/master/skills'>查看所有 SKILL.md</a>">
+      + <code>okx-x402-payment</code> as payment layer · + <code>okx-agentic-wallet</code> TEE signing · <a href="https://github.com/wanggang22/autoyield/tree/master/skills">View all SKILL.md</a>
     </p>
   </div>
 </section>
@@ -428,8 +464,8 @@
 <!-- Integrate -->
 <section id="integrate" style="background: rgba(139, 92, 246, 0.03);">
   <div class="container">
-    <h2>开发者集成</h2>
-    <p class="section-sub">适合开发者 / AI Agent 自动化使用。</p>
+    <h2 data-en="Developer Integration" data-zh="开发者集成">Developer Integration</h2>
+    <p class="section-sub" data-en="For developers and automated AI agents." data-zh="适合开发者 / AI Agent 自动化使用。">For developers and automated AI agents.</p>
 
     <h3 style="font-size:1.1rem;color:var(--accent);margin:24px 0 12px">MCP (Claude Code / Cursor)</h3>
     <div class="code-block">{
@@ -444,21 +480,22 @@
   }
 }</div>
 
-    <h3 style="font-size:1.1rem;color:var(--accent);margin:32px 0 12px">HTTP API 直接调用</h3>
+    <h3 style="font-size:1.1rem;color:var(--accent);margin:32px 0 12px" data-en="HTTP API Direct" data-zh="HTTP API 直接调用">HTTP API Direct</h3>
     <div class="code-block">POST https://autoyield-production.up.railway.app/api/strategy/start
 Content-Type: application/json
 X-PAYMENT: &lt;base64 x402 signature&gt;
 
 {
   "strategyId": "custom",
-  "rule": "找 Solana 上市值 10K-500K 的搞笑 meme 币"
+  "rule": "Find Solana memes with $10K-$500K market cap, funny narratives"
 }
 
-→ 返回 AI 分析结果 + meme 币列表 + 合约地址</div>
+→ Returns AI analysis + meme coin list + contract addresses</div>
 
-    <p class="section-sub" style="margin-top:16px;font-size:.85rem">
-      x402 支付流程：HTTP 402 → 读取 PAYMENT-REQUIRED header → EIP-3009 签名 0.05 USDC → 重放请求。
-      零 gas（OKX Facilitator 代付）。
+    <p class="section-sub" style="margin-top:16px;font-size:.85rem"
+       data-en="x402 flow: HTTP 402 → read PAYMENT-REQUIRED header → EIP-3009 sign 0.05 USDC → replay request. Zero gas (OKX Facilitator sponsors)."
+       data-zh="x402 支付流程：HTTP 402 → 读取 PAYMENT-REQUIRED header → EIP-3009 签名 0.05 USDC → 重放请求。零 gas（OKX Facilitator 代付）。">
+      x402 flow: HTTP 402 → read PAYMENT-REQUIRED header → EIP-3009 sign 0.05 USDC → replay request. Zero gas (OKX Facilitator sponsors).
     </p>
   </div>
 </section>
@@ -466,22 +503,26 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
 <!-- Deployment -->
 <section>
   <div class="container">
-    <h2>链上部署</h2>
-    <p class="section-sub">X Layer Mainnet (Chain 196) · 合约 + x402 结算 · 零 gas</p>
+    <h2 data-en="On-chain Deployment" data-zh="链上部署">On-chain Deployment</h2>
+    <p class="section-sub"
+       data-en="X Layer Mainnet (Chain 196) · Contracts + x402 settlement · Zero gas"
+       data-zh="X Layer Mainnet (Chain 196) · 合约 + x402 结算 · 零 gas">
+      X Layer Mainnet (Chain 196) · Contracts + x402 settlement · Zero gas
+    </p>
 
-    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px">Agent 身份</h3>
+    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px" data-en="Agent Identity" data-zh="Agent 身份">Agent Identity</h3>
     <div class="addr-grid" style="margin-bottom:24px">
       <div class="addr-card">
         <div class="label">Agentic Wallet (TEE)</div>
         <code>0x817c2756f2b3f0977532be533bdafbc9d32dd30f</code>
       </div>
       <div class="addr-card">
-        <div class="label">x402 收款地址</div>
+        <div class="label" data-en="x402 Receiving Address" data-zh="x402 收款地址">x402 Receiving Address</div>
         <code>0x418E21F39411f513E29bFfCa1742868271Eb8a24</code>
       </div>
     </div>
 
-    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px">智能合约</h3>
+    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px" data-en="Smart Contracts" data-zh="智能合约">Smart Contracts</h3>
     <div class="addr-grid">
       <div class="addr-card">
         <div class="label">AgentRegistry v2</div>
@@ -521,6 +562,35 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
 
 <script>
   const API = 'https://autoyield-production.up.railway.app';
+
+  // ── i18n: language toggle ─────────────────────────────────────
+  const SAVED_LANG = localStorage.getItem('autoyield-lang') || 'en';
+
+  function applyLang(lang) {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-en]').forEach(el => {
+      const txt = el.getAttribute(`data-${lang}`);
+      if (txt != null) el.innerHTML = txt;
+    });
+    document.querySelectorAll('[data-en-ph]').forEach(el => {
+      const ph = el.getAttribute(`data-${lang}-ph`);
+      if (ph != null) el.placeholder = ph;
+    });
+    document.querySelectorAll('.example-chip').forEach(chip => {
+      const rule = chip.getAttribute(`data-${lang}-rule`);
+      if (rule != null) chip.dataset.rule = rule;
+    });
+    const btn = document.getElementById('langToggle');
+    if (btn) btn.textContent = lang === 'en' ? '中文' : 'EN';
+    localStorage.setItem('autoyield-lang', lang);
+  }
+
+  applyLang(SAVED_LANG);
+
+  document.getElementById('langToggle')?.addEventListener('click', () => {
+    const cur = localStorage.getItem('autoyield-lang') || 'en';
+    applyLang(cur === 'en' ? 'zh' : 'en');
+  });
 
   // Example chip clicks
   document.querySelectorAll('.example-chip').forEach(chip => {
