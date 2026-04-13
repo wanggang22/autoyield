@@ -322,6 +322,7 @@
       <a href="#skills" data-en="Skills" data-zh="技能">Skills</a>
       <a href="#integrate" data-en="Integrate" data-zh="集成">Integrate</a>
       <a href="https://github.com/wanggang22/autoyield" target="_blank">GitHub</a>
+      <button id="resetWallet" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem;display:none" title="切换钱包 / Switch wallet">🔄</button>
       <button id="langToggle" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem">中文</button>
     </div>
   </div>
@@ -592,6 +593,19 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     applyLang(cur === 'en' ? 'zh' : 'en');
   });
 
+  // Show "switch wallet" button if a wallet was previously chosen
+  function refreshWalletBtn() {
+    const btn = document.getElementById('resetWallet');
+    if (btn) btn.style.display = localStorage.getItem('autoyield-wallet') ? 'inline-flex' : 'none';
+  }
+  refreshWalletBtn();
+  document.getElementById('resetWallet')?.addEventListener('click', () => {
+    localStorage.removeItem('autoyield-wallet');
+    refreshWalletBtn();
+    const lang = localStorage.getItem('autoyield-lang') || 'en';
+    alert(lang === 'zh' ? '✓ 已重置钱包选择，下次扫描会重新选' : '✓ Wallet reset. Will pick again on next scan.');
+  });
+
   // Example chip clicks
   document.querySelectorAll('.example-chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -691,17 +705,30 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
       return;
     }
 
-    // Pick wallet (only show modal if more than 1)
+    // Pick wallet — remember selection across scans
     let provider;
-    if (wallets.length === 1) {
+    const savedWalletId = localStorage.getItem('autoyield-wallet');
+    const savedWallet = savedWalletId ? wallets.find(w => w.id === savedWalletId) : null;
+
+    if (savedWallet) {
+      provider = savedWallet.provider;
+      resultArea.innerHTML = (lang === 'zh' ? `🔗 使用 ${savedWallet.name} 连接...\n` : `🔗 Connecting via ${savedWallet.name}...\n`);
+    } else if (wallets.length === 1) {
       provider = wallets[0].provider;
+      localStorage.setItem('autoyield-wallet', wallets[0].id);
       resultArea.innerHTML = (lang === 'zh' ? `🔗 使用 ${wallets[0].name} 连接...\n` : `🔗 Connecting via ${wallets[0].name}...\n`);
     } else {
-      resultArea.innerHTML = lang === 'zh' ? '🔗 请选择钱包...\n' : '🔗 Please choose a wallet...\n';
-      provider = await pickWallet(wallets);
-      if (!provider) {
+      resultArea.innerHTML = lang === 'zh' ? '🔗 请选择钱包（仅首次需要）...\n' : '🔗 Please choose a wallet (first time only)...\n';
+      const pickedProvider = await pickWallet(wallets);
+      if (!pickedProvider) {
         resultArea.innerHTML = lang === 'zh' ? '❌ 已取消' : '❌ Cancelled';
         return;
+      }
+      const pickedWallet = wallets.find(w => w.provider === pickedProvider);
+      provider = pickedProvider;
+      if (pickedWallet) {
+        localStorage.setItem('autoyield-wallet', pickedWallet.id);
+        refreshWalletBtn();
       }
     }
 
