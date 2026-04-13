@@ -210,7 +210,15 @@ node scripts/agent-server.mjs
 
 ## Team
 
-Solo developer · Build X Hackathon 2026
+| Role | Contact |
+|------|---------|
+| Developer / Designer / Everything | **Gavin Wang** |
+| X (Twitter) | [@wangligang21](https://x.com/wangligang21) |
+| Telegram | [@wangligang21](https://t.me/wangligang21) |
+| Email (X Layer Arena) | wangligang161616@gmail.com |
+| Email (Skills Arena) | gavinwang.ccsmy@gmail.com |
+
+Solo developer building AutoYield for Build X Hackathon 2026.
 
 ## License
 
