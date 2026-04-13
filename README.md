@@ -62,14 +62,28 @@ X Layer Mainnet (Chain 196)
 └── Agentic Wallet (TEE-secured)
 ```
 
-## Deployment Addresses
+## Multi-Agent Architecture & Roles
 
-### Agent On-chain Identity
+This project deploys **2 coordinated Agents** on X Layer:
 
-| Type | Address |
-|------|---------|
-| Agentic Wallet (TEE) | `0x817c2756f2b3f0977532be533bdafbc9d32dd30f` |
-| x402 Receiving Address | `0x418E21F39411f513E29bFfCa1742868271Eb8a24` |
+### Agent 1 · AutoYield Server Agent (primary)
+
+- **Role**: Receives user queries, orchestrates 8 OKX OnchainOS APIs, returns meme coin analysis
+- **Deployment**: Railway-hosted Node.js server (`scripts/agent-server.mjs`)
+- **Agentic Wallet (TEE, on-chain identity)**: `0x817c2756f2b3f0977532be533bdafbc9d32dd30f`
+  - Receives all x402 USDC income from users (per `payTo` in payment requirements)
+  - TEE-secured via OKX Agentic Wallet API
+- **Operational Signing Key (EOA)**: `0x418E21F39411f513E29bFfCa1742868271Eb8a24`
+  - Signs outgoing operations (e.g., agent-to-agent payments via `/api/agent-pay`)
+  - Local AGENT_PK (for low-latency signing)
+
+### Agent 2 · Meme Monitor Bot (client agent)
+
+- **Role**: Autonomous cron client that pays Agent 1 to discover meme coins, then pushes results to Telegram
+- **Deployment**: GitHub Actions cron (`github.com/wanggang22/autoyield-meme-monitor`, every 2h)
+- **Wallet**: `0x418E21F39411f513E29bFfCa1742868271Eb8a24`
+  - Signs EIP-3009 authorization to pay $0.05 USDC per scan to Agent 1's TEE wallet
+- **Demonstrates real agent-to-agent x402 flow**: one Agent pays another Agent for data on X Layer
 
 ### Smart Contracts (X Layer Mainnet)
 
