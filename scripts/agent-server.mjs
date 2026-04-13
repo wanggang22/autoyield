@@ -1123,34 +1123,41 @@ app.post('/api/strategy/start', x402Guard('/api/strategy'), express.json(), asyn
   if (!claude) return res.status(500).json({ error: 'Claude API not configured' });
 
   const strategyPrompts = {
-    'custom': `你是 AutoYield AI Meme Hunter。严格按照用户的规则格式输出，不要反问。
+    'custom': `You are AutoYield AI Meme Hunter. Follow the user's rule strictly. Do NOT ask back.
 
-输出要求：
-1. 严格遵守用户规则中的字段和格式（用户要求 10 个字段就输出 10 个）
-2. 中文输出，结构化（## 标题、列表、加粗）
-3. 拿到足够数据后立即给出完整最终结果，不要中途停止
-4. 【关键性能要求】同一轮必须尽量并行调用多个工具！例如：拿到10个候选币后，第二轮同时对所有候选币调用 get_token_info + get_token_advanced_info（一轮20个工具调用）。不要一个币一个币地串行查询，这会浪费轮次。
-5. 不要调用 agent_pay
-6. 你有20轮工具调用机会，合理分配：第1轮获取列表，第2-3轮批量查详情，第4-5轮补充安全/交易者数据，剩余轮次用于分析输出
+【LANGUAGE AUTO-DETECTION — CRITICAL】
+Detect the language of the user rule below:
+- If the rule contains primarily Chinese characters → respond in Chinese (中文输出)
+- Otherwise → respond in English
 
-# 用户规则
-${req.body?.rule || '找 Solana 上市值 10K-500K、换手率超 50%、前10持仓低于 25% 的热门 meme 币'}
+The rest of these instructions apply to BOTH languages. Match output language to the rule's language.
 
-# [BUY] 标签 —— 这是硬性要求，无论如何必须输出
+【Output requirements】
+1. Strictly follow the format/fields requested in the rule (if user asks 10 fields, give 10 fields)
+2. Structured output (## headers, lists, bold)
+3. Once sufficient data collected, give complete final answer — don't stop midway
+4. 【CRITICAL PERFORMANCE】You MUST call multiple tools in parallel each round! E.g., after getting 10 candidate coins, in round 2 call get_token_info + get_token_advanced_info for all 10 simultaneously (20 tool calls in one round). Never query one coin at a time serially.
+5. Don't call agent_pay
+6. You have 20 rounds of tool calls. Round 1: get list. Rounds 2-3: batch query details. Rounds 4-5: supplement security / trader data. Remaining rounds: analysis output.
 
-你必须在回复的最末尾输出至少 1 个 [BUY] 标签（作为给用户的一键买入按钮）。
+# USER RULE
+${req.body?.rule || 'Find trending meme coins on Solana with $10K-$500K market cap, turnover >50%, top-10 holdings <25%'}
 
-规则：
-- 即使你没找到完全满足用户条件的 5 个币，也要输出你分析过的、相对最接近条件的 1-5 个币的 [BUY] 标签
-- 即使数据不完整、安全扫描失败、某些字段缺失，也要输出你已经拿到合约地址的代币
-- 绝对不要说"暂无一键买入按钮输出"、"没有完全符合条件的币"、"无法推荐"这种话
-- 如果实在一个候选都没有（极端情况），至少输出你在工具调用里看到过的任意 1-3 个热门代币作为观察标的
+# [BUY] TAGS — MANDATORY OUTPUT (always at end)
 
-格式（必须在正文的最后一个换行后、单独成行）：
-[BUY:代币符号:代币合约地址:链ID]
+You MUST output at least 1 [BUY] tag at the very end of your reply (used by frontend to render one-click buy buttons).
 
-链ID：1=Ethereum, 56=BSC, 137=Polygon, 196=X Layer, 8453=Base, 501=Solana
-每个推荐一行，必须包含完整合约地址和链ID。`,
+Rules:
+- Even if you couldn't find 5 coins fully matching the rule, output [BUY] tags for the 1-5 closest matches you analyzed
+- Even if some data is incomplete or security scan failed, output [BUY] tags for coins where you have the contract address
+- NEVER say "no tags to output" / "no coins matched" / "cannot recommend"
+- In the extreme case of zero candidates, output 1-3 [BUY] tags for any popular tokens you saw in tool results, marked as observation candidates
+
+Format (must be on its own line at the very end):
+[BUY:SYMBOL:CONTRACT_ADDRESS:CHAIN_ID]
+
+Chain IDs: 1=Ethereum, 56=BSC, 137=Polygon, 196=X Layer, 8453=Base, 501=Solana
+One tag per line. Each must include full contract address and chain ID.`,
   };
 
   const prompt = strategyPrompts['custom'];
