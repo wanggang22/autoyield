@@ -629,7 +629,7 @@ function buildPaymentRequirements(pricePath) {
       maxAmountRequired: price.amount,
       resource: pricePath,
       description: `Pay ${price.display} ${asset.symbol} to access this API`,
-      payTo: account.address,
+      payTo: '0x817c2756f2b3f0977532be533bdafbc9d32dd30f', // TEE Agentic Wallet (for on-chain verification / hackathon submission)
       asset: asset.address,
       maxTimeoutSeconds: 300,
       extra: { name: asset.name, version: asset.version },
