@@ -524,34 +524,40 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px" data-en="Agent Identity" data-zh="Agent 身份">Agent Identity</h3>
     <div class="addr-grid" style="margin-bottom:24px">
       <div class="addr-card">
-        <div class="label">Agentic Wallet (TEE)</div>
+        <div class="label" data-en="Agentic Wallet (TEE) · primary · receives x402 USDC" data-zh="Agentic Wallet (TEE) · 主钱包 · 收 x402 USDC">Agentic Wallet (TEE) · primary · receives x402 USDC</div>
         <code>0x817c2756f2b3f0977532be533bdafbc9d32dd30f</code>
       </div>
       <div class="addr-card">
-        <div class="label" data-en="x402 Receiving Address" data-zh="x402 收款地址">x402 Receiving Address</div>
+        <div class="label" data-en="Operational EOA · signs agent-to-agent payments" data-zh="Operational EOA · 签名 Agent 间转账">Operational EOA · signs agent-to-agent payments</div>
         <code>0x418E21F39411f513E29bFfCa1742868271Eb8a24</code>
       </div>
     </div>
 
-    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px" data-en="Smart Contracts" data-zh="智能合约">Smart Contracts</h3>
+    <h3 style="font-size:1rem;color:var(--accent);margin-bottom:12px" data-en="Smart Contracts · 4 deployed on X Layer Mainnet" data-zh="智能合约 · 4 个部署在 X Layer Mainnet">Smart Contracts · 4 deployed on X Layer Mainnet</h3>
     <div class="addr-grid">
       <div class="addr-card">
-        <div class="label">AgentRegistry v2</div>
+        <div class="label" data-en="AgentRegistry v2 · on-chain Agent registry (identity, owner, created_at)" data-zh="AgentRegistry v2 · Agent 链上注册表（身份、owner、创建时间）">AgentRegistry v2 · on-chain Agent registry</div>
         <code>0x7337a8963Dc7Cf0644f9423bBE397b3D0f97ACa1</code>
       </div>
       <div class="addr-card">
-        <div class="label">TaskManager</div>
+        <div class="label" data-en="TaskManager · Agent task execution records" data-zh="TaskManager · Agent 任务执行记录">TaskManager · task execution records</div>
         <code>0x599e23D6073426eBe357d03056258eEAa217e01D</code>
       </div>
       <div class="addr-card">
-        <div class="label">ReputationEngine</div>
+        <div class="label" data-en="ReputationEngine · Agent reputation scoring" data-zh="ReputationEngine · Agent 信誉评分">ReputationEngine · reputation scoring</div>
         <code>0x3bf87bf49141B014e4Eef71A661988624c1af29F</code>
       </div>
       <div class="addr-card">
-        <div class="label">X402Rating</div>
+        <div class="label" data-en="X402Rating · x402 service quality ratings" data-zh="X402Rating · x402 服务质量评分">X402Rating · service quality ratings</div>
         <code>0x85Be67F1A3c1f470A6c94b3C77fD326d3c0f1188</code>
       </div>
     </div>
+
+    <p class="section-sub" style="margin-top:20px;font-size:.8rem;color:var(--muted)"
+       data-en="Primary flow: Users pay x402 USDC to the TEE Agentic Wallet. The Operational EOA is reserved for future agent-to-agent payments. All 4 smart contracts deployed as infrastructure for the broader agent economy on X Layer."
+       data-zh="主流程：用户通过 x402 付 USDC 到 TEE Agentic Wallet。Operational EOA 预留给未来 Agent 间转账。4 个合约是 X Layer 上 Agent 经济基础设施。">
+      Primary flow: Users pay x402 USDC to the TEE Agentic Wallet. The Operational EOA is reserved for future agent-to-agent payments. All 4 smart contracts deployed as infrastructure for the broader agent economy on X Layer.
+    </p>
   </div>
 </section>
 
