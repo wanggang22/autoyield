@@ -564,6 +564,9 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
 <script>
   const API = 'https://autoyield-production.up.railway.app';
 
+  // Wallet state (must be declared before applyLang runs)
+  let connectedAccount = null;
+
   // ── i18n: language toggle ─────────────────────────────────────
   const SAVED_LANG = localStorage.getItem('autoyield-lang') || 'en';
 
@@ -595,7 +598,6 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
   });
 
   // ── Wallet management button ──────────────────────────────────
-  let connectedAccount = null;  // current connected address
 
   function refreshWalletBtn() {
     const btn = document.getElementById('walletBtn');
