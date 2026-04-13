@@ -599,6 +599,25 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     });
   });
 
+  // ── Helpers ───────────────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  window.copyAddr = function(addr, btn) {
+    navigator.clipboard.writeText(addr).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1500);
+    });
+  };
+
   // ── Wallet detection & picker ─────────────────────────────────
   function detectWallets() {
     const wallets = [];
@@ -797,10 +816,67 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
       }
 
       const txLink = data.payment?.transaction
-        ? `\n🔗 x402 tx: https://www.okx.com/web3/explorer/xlayer/tx/${data.payment.transaction}`
-        : '';
+        ? `<a href="https://www.okx.com/web3/explorer/xlayer/tx/${data.payment.transaction}" target="_blank" style="color:var(--cyan)">${data.payment.transaction.slice(0, 16)}...</a>`
+        : '—';
 
-      resultArea.innerHTML = `✅ AI Meme Hunter 结果\n${'━'.repeat(50)}\n\n${data.result || '(no result)'}\n\n${'━'.repeat(50)}\n💳 已支付 $0.05 USDC${txLink}`;
+      // Parse [BUY:SYMBOL:ADDRESS:CHAIN_ID] tags into pretty cards
+      let textOnly = data.result || '(no result)';
+      const buyTags = [];
+      textOnly = textOnly.replace(/\[BUY:([^:\]]+):([^:\]]+):(\d+)\]/g, (m, sym, addr, chain) => {
+        buyTags.push({ sym: sym.trim(), addr: addr.trim(), chain: chain.trim() });
+        return '';
+      }).trim();
+
+      const chainNames = { '1': 'Ethereum', '56': 'BSC', '137': 'Polygon', '196': 'X Layer', '8453': 'Base', '501': 'Solana' };
+      const chainColor = { '1': '#627eea', '56': '#f3ba2f', '196': '#1296ff', '8453': '#0052ff', '501': '#9945ff' };
+
+      // Render header + result text
+      let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:.85rem">
+        <span style="color:var(--green);font-weight:600">✅ AI Meme Hunter</span>
+        <span style="color:var(--muted)">💳 $0.05 USDC · tx: ${txLink}</span>
+      </div>`;
+
+      // Result body (preserve formatting)
+      html += `<div style="white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:.85rem;line-height:1.6;color:var(--text);margin-bottom:20px">${escapeHtml(textOnly)}</div>`;
+
+      // BUY cards
+      if (buyTags.length > 0) {
+        html += `<div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px">
+          <div style="font-size:.9rem;color:var(--accent);font-weight:600;margin-bottom:12px">🛒 一键操作 / Quick Actions (${buyTags.length})</div>
+          <div style="display:grid;gap:10px">`;
+
+        buyTags.forEach(t => {
+          const chainName = chainNames[t.chain] || `Chain ${t.chain}`;
+          const color = chainColor[t.chain] || 'var(--accent)';
+          // OKX Wallet deep link (works on mobile + web)
+          const okxBuyUrl = `https://www.okx.com/web3/dex-swap?inputChain=${t.chain}&outputChain=${t.chain}&outputCurrency=${t.addr}`;
+          // Solana-specific: also offer GMGN/Jupiter for Solana memes
+          const altUrl = t.chain === '501'
+            ? `https://gmgn.ai/sol/token/${t.addr}`
+            : `https://app.uniswap.org/swap?chain=${chainName.toLowerCase()}&outputCurrency=${t.addr}`;
+          const altLabel = t.chain === '501' ? '🐸 GMGN' : '🦄 Uniswap';
+
+          html += `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="display:inline-block;padding:2px 8px;background:${color};color:#fff;border-radius:4px;font-size:.7rem;font-weight:600">${chainName}</span>
+                <strong style="font-size:1rem">${escapeHtml(t.sym)}</strong>
+              </div>
+            </div>
+            <code style="display:block;font-size:.7rem;color:var(--cyan);word-break:break-all;margin-bottom:10px;background:transparent;padding:0">${escapeHtml(t.addr)}</code>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="copyAddr('${t.addr}', this)" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem">📋 复制 / Copy</button>
+              <a href="${okxBuyUrl}" target="_blank" class="btn btn-primary" style="padding:6px 12px;font-size:.8rem;text-decoration:none">🛒 OKX DEX</a>
+              <a href="${altUrl}" target="_blank" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem;text-decoration:none">${altLabel}</a>
+            </div>
+          </div>`;
+        });
+
+        html += `</div></div>`;
+      }
+
+      resultArea.innerHTML = html;
+      resultArea.style.fontFamily = 'inherit';
     } catch (err) {
       resultArea.innerHTML = '❌ 错误: ' + (err.message || err);
     }
