@@ -6,12 +6,54 @@ AI-powered meme coin scanner as an MCP (Model Context Protocol) server. Use it i
 
 Pay-per-scan via x402 micropayment ($0.05 USDC on X Layer, zero gas).
 
-## Quick Start
+## How It Works
 
-### 1. Install via npx (no install needed)
+This is an **MCP server** — it doesn't run on its own. Your AI client (Claude Code / Cursor) starts it as a subprocess and talks to it via JSON-RPC over stdio.
 
-Add to your MCP config (`.mcp.json` for Claude Code, `~/.cursor/mcp.json` for Cursor):
+```
+You write rule in AI client
+        ↓
+AI client (Claude Code / Cursor)
+   reads .mcp.json → spawns this MCP server as subprocess
+        ↓
+MCP server (this package)
+   ├── Receives natural language rule from AI
+   ├── Auto-pays $0.05 USDC via x402 (uses your wallet key)
+   ├── Calls AutoYield API
+   └── Returns meme coin recommendations to AI
+        ↓
+AI displays results to you
+```
 
+## Setup (3 Steps)
+
+### Step 1 · Choose Install Method
+
+You have two options. **Both require configuring `.mcp.json` in Step 2** — the choice only affects how the package is fetched.
+
+**Option A: Use `npx` (recommended, no manual install)**
+
+Skip this step. `npx` will auto-download the package the first time your AI client starts the MCP server (first launch ~5-10s, subsequent launches use cache).
+
+**Option B: Pre-install globally (faster startup, manual updates)**
+
+```bash
+npm install -g autoyield-meme-scanner
+```
+
+Saves a few seconds on first startup, but you'll need to run `npm update -g autoyield-meme-scanner` to get newer versions.
+
+### Step 2 · Configure your AI client
+
+Edit your MCP config file:
+
+| AI Client | Config Path |
+|-----------|-------------|
+| Claude Code (project) | `.mcp.json` (in project root) |
+| Claude Code (global) | `~/.claude.json` (under `mcpServers`) |
+| Cursor | `~/.cursor/mcp.json` |
+
+**For Option A (npx):**
 ```json
 {
   "mcpServers": {
@@ -19,32 +61,32 @@ Add to your MCP config (`.mcp.json` for Claude Code, `~/.cursor/mcp.json` for Cu
       "command": "npx",
       "args": ["-y", "autoyield-meme-scanner"],
       "env": {
-        "AGENT_PRIVATE_KEY": "your-x-layer-wallet-private-key"
+        "AGENT_PRIVATE_KEY": "0xYOUR_X_LAYER_WALLET_PRIVATE_KEY"
       }
     }
   }
 }
 ```
 
-### 2. Or install globally
-
-```bash
-npm install -g autoyield-meme-scanner
-```
-
-Then use:
+**For Option B (globally installed):**
 ```json
 {
   "mcpServers": {
     "autoyield-meme": {
       "command": "autoyield-meme-scanner",
       "env": {
-        "AGENT_PRIVATE_KEY": "your-x-layer-wallet-private-key"
+        "AGENT_PRIVATE_KEY": "0xYOUR_X_LAYER_WALLET_PRIVATE_KEY"
       }
     }
   }
 }
 ```
+
+### Step 3 · Restart AI client
+
+Restart Claude Code / Cursor so it picks up the new MCP config and spawns the server.
+
+That's it — try asking your AI: *"Find Solana meme coins under $500K market cap"*
 
 ## Requirements
 
