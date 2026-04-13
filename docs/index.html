@@ -322,7 +322,7 @@
       <a href="#skills" data-en="Skills" data-zh="技能">Skills</a>
       <a href="#integrate" data-en="Integrate" data-zh="集成">Integrate</a>
       <a href="https://github.com/wanggang22/autoyield" target="_blank">GitHub</a>
-      <button id="resetWallet" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem;display:none" title="切换钱包 / Switch wallet">🔄</button>
+      <button id="walletBtn" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem">🔌 Connect Wallet</button>
       <button id="langToggle" class="btn btn-outline" style="padding:6px 12px;font-size:.8rem">中文</button>
     </div>
   </div>
@@ -584,6 +584,7 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     const btn = document.getElementById('langToggle');
     if (btn) btn.textContent = lang === 'en' ? '中文' : 'EN';
     localStorage.setItem('autoyield-lang', lang);
+    if (typeof refreshWalletBtn === 'function') refreshWalletBtn();
   }
 
   applyLang(SAVED_LANG);
@@ -593,17 +594,119 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     applyLang(cur === 'en' ? 'zh' : 'en');
   });
 
-  // Show "switch wallet" button if a wallet was previously chosen
+  // ── Wallet management button ──────────────────────────────────
+  let connectedAccount = null;  // current connected address
+
   function refreshWalletBtn() {
-    const btn = document.getElementById('resetWallet');
-    if (btn) btn.style.display = localStorage.getItem('autoyield-wallet') ? 'inline-flex' : 'none';
-  }
-  refreshWalletBtn();
-  document.getElementById('resetWallet')?.addEventListener('click', () => {
-    localStorage.removeItem('autoyield-wallet');
-    refreshWalletBtn();
+    const btn = document.getElementById('walletBtn');
+    if (!btn) return;
     const lang = localStorage.getItem('autoyield-lang') || 'en';
-    alert(lang === 'zh' ? '✓ 已重置钱包选择，下次扫描会重新选' : '✓ Wallet reset. Will pick again on next scan.');
+    const walletId = localStorage.getItem('autoyield-wallet');
+    const wallets = detectWallets();
+    const wallet = walletId ? wallets.find(w => w.id === walletId) : null;
+
+    if (connectedAccount && wallet) {
+      const short = `${connectedAccount.slice(0, 6)}...${connectedAccount.slice(-4)}`;
+      btn.textContent = `${wallet.icon} ${short}`;
+      btn.title = `${wallet.name} · ${connectedAccount}`;
+    } else if (wallet) {
+      btn.textContent = lang === 'zh' ? `${wallet.icon} 已选 ${wallet.name}` : `${wallet.icon} ${wallet.name}`;
+      btn.title = lang === 'zh' ? '点击连接 / 切换 / 断开' : 'Click to connect / switch / disconnect';
+    } else {
+      btn.textContent = lang === 'zh' ? '🔌 连接钱包' : '🔌 Connect Wallet';
+      btn.title = '';
+    }
+  }
+
+  async function showWalletMenu() {
+    const wallets = detectWallets();
+    const lang = localStorage.getItem('autoyield-lang') || 'en';
+    const isConnected = !!connectedAccount;
+    const currentId = localStorage.getItem('autoyield-wallet');
+
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)';
+      const modal = document.createElement('div');
+      modal.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:320px;max-width:420px';
+
+      const title = isConnected
+        ? (lang === 'zh' ? '钱包管理' : 'Wallet')
+        : (lang === 'zh' ? '选择钱包' : 'Choose Wallet');
+      modal.innerHTML = `<h3 style="margin-bottom:8px;font-size:1.1rem">${title}</h3>`;
+
+      if (isConnected) {
+        modal.innerHTML += `<div style="background:var(--card2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:.85rem">
+          <div style="color:var(--muted);margin-bottom:4px">${lang === 'zh' ? '当前地址' : 'Current address'}</div>
+          <code style="word-break:break-all;color:var(--cyan);background:transparent;padding:0">${connectedAccount}</code>
+        </div>`;
+      }
+
+      // Wallet list
+      modal.innerHTML += `<div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">${lang === 'zh' ? (isConnected ? '切换到:' : '可用钱包:') : (isConnected ? 'Switch to:' : 'Available wallets:')}</div>`;
+
+      wallets.forEach(w => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline';
+        btn.style.cssText = 'width:100%;margin-bottom:8px;justify-content:flex-start;font-size:.95rem';
+        const isCurrent = currentId === w.id;
+        btn.innerHTML = `${w.icon}&nbsp;&nbsp;${w.name}${isCurrent ? ' <span style="color:var(--green);margin-left:auto">✓</span>' : ''}`;
+        btn.onclick = () => { document.body.removeChild(overlay); resolve({ action: 'connect', wallet: w }); };
+        modal.appendChild(btn);
+      });
+
+      if (wallets.length === 0) {
+        modal.innerHTML += `<div style="background:var(--card2);border-radius:8px;padding:16px;font-size:.85rem;color:var(--text2);margin-bottom:12px">
+          ${lang === 'zh' ? '⚠️ 未检测到 Web3 钱包<br>请安装 OKX Wallet 或 MetaMask' : '⚠️ No Web3 wallet detected<br>Please install OKX Wallet or MetaMask'}
+        </div>`;
+      }
+
+      // Disconnect button (only if connected)
+      if (isConnected) {
+        const dcBtn = document.createElement('button');
+        dcBtn.className = 'btn btn-outline';
+        dcBtn.style.cssText = 'width:100%;margin-top:8px;color:var(--red);border-color:var(--red)';
+        dcBtn.textContent = lang === 'zh' ? '🔌 断开' : '🔌 Disconnect';
+        dcBtn.onclick = () => { document.body.removeChild(overlay); resolve({ action: 'disconnect' }); };
+        modal.appendChild(dcBtn);
+      }
+
+      // Cancel
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn btn-outline';
+      cancelBtn.style.cssText = 'width:100%;margin-top:8px;color:var(--muted)';
+      cancelBtn.textContent = lang === 'zh' ? '取消' : 'Cancel';
+      cancelBtn.onclick = () => { document.body.removeChild(overlay); resolve(null); };
+      modal.appendChild(cancelBtn);
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+    });
+  }
+
+  refreshWalletBtn();
+
+  document.getElementById('walletBtn')?.addEventListener('click', async () => {
+    const result = await showWalletMenu();
+    if (!result) return;
+
+    if (result.action === 'disconnect') {
+      connectedAccount = null;
+      localStorage.removeItem('autoyield-wallet');
+      refreshWalletBtn();
+      return;
+    }
+
+    if (result.action === 'connect') {
+      try {
+        const accounts = await result.wallet.provider.request({ method: 'eth_requestAccounts' });
+        connectedAccount = accounts[0];
+        localStorage.setItem('autoyield-wallet', result.wallet.id);
+        refreshWalletBtn();
+      } catch (err) {
+        // user rejected, ignore
+      }
+    }
   });
 
   // Example chip clicks
@@ -735,6 +838,8 @@ X-PAYMENT: &lt;base64 x402 signature&gt;
     try {
       const accounts = await provider.request({ method: 'eth_requestAccounts' });
       const from = accounts[0];
+      connectedAccount = from;
+      refreshWalletBtn();
 
       // Switch to X Layer
       try {
