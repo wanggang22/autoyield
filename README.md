@@ -188,6 +188,16 @@ autoyield/
 - 🏆 **Best Data Analysis** (500 USDT) — One entry orchestrates 8 OKX data sources
 - 🏆 **Most Active Agent** (500 USDT) — Telegram Bot cron auto-triggers every 2h
 
+## Architecture Roadmap
+
+Post-hackathon production refactor:
+
+- **Hybrid orchestration** — JS pipeline for deterministic flow + narrow AI calls at key nodes (query parsing, token ranking, reason generation)
+- **Rule-as-code** — Compile SKILL.md rules into JS implementation with 1:1 mapping and unit test coverage
+- **Cost** — target $0.02 per scan (12× reduction from current)
+- **Latency** — target <10s end-to-end (6× faster)
+- **Safety** — 100% of Skill `MUST/SHOULD` rules backed by automated tests
+
 ## Environment Variables
 
 ```bash
