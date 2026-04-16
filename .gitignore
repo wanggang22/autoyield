@@ -7,3 +7,8 @@ broadcast/
 .gstack/
 *.tgz
 .mcp.local.json
+
+# Internal architecture study notes (not for public repo)
+AI_AGENT_ARCHITECTURE.md
+TOOL_USE_AND_SCHEMA.md
+ARCHITECTURE_REPORT.md

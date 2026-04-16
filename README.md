@@ -248,3 +248,7 @@ MIT
 - ⚙️ **HTTP API**: 直接调 `/api/strategy/start`，参考客户端 [autoyield-meme-monitor](https://github.com/wanggang22/autoyield-meme-monitor) （Python + Telegram Bot）
 
 **真实使用的 8 个 OKX Skills：** dex-trenches, dex-signal, dex-token (5 functions), security
+
+**未来规划：**
+- 🏗 **架构演进** — 重构为 JS 编排 + AI 精细插入，目标单次成本降 12×
+- 📏 **规则即代码** — 将 SKILL.md 硬规则编译到 JS 实现，逐条映射 + 单元测试覆盖
